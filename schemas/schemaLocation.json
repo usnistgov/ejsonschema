@@ -1,0 +1,5 @@
+{
+    "http://json-schema.org/draft-04/schema#": "json-schema.json",
+    "https://www.nist.gov/od/dm/enhanced-json-schema/v0.1#":
+         "enhanced-json-schema.json"
+}

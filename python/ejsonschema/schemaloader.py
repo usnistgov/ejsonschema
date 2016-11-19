@@ -142,8 +142,17 @@ class SchemaLoader(BaseSchemaLoad):
         """
         add all the URI-file mappings in the given dictionary
         """
-        self._map.update(urifiles)
-        self._addschemes(urifiles)
+
+        # strip any trailing #s from the ids
+        urilocs = {}
+        for id in urifiles:
+            outid = id
+            if id.endswith('#'):
+                outid = id.rstrip('#')
+            urilocs[outid] = urifiles[id]
+        
+        self._map.update(urilocs)
+        self._addschemes(urilocs)
 
     def load_schema(self, uri):
         """
@@ -315,7 +324,7 @@ class DirectorySchemaCache(object):
             if not recurse:
                 break
 
-    def locations(self, absolute=False, recursive=True):
+    def locations(self, absolute=True, recursive=True):
         """
         return a dictionary that maps schema URIs to their file paths.  
 
@@ -329,6 +338,10 @@ class DirectorySchemaCache(object):
         for file, id, schema in self._iterfiles(recursive):
             if absolute:
                 file = os.path.join(self._dir, file)
+
+            # if id ends in a #, drop it off the end
+            if id.endswith('#'):
+                id = id.rstrip('#')
             out[id] = file
 
         return out

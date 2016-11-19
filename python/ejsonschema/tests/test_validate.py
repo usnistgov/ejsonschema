@@ -8,19 +8,14 @@ from . import Tempfiles
 import ejsonschema.validate as val
 import ejsonschema.schemaloader as loader
 
-schemadir = os.path.join(
-   os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))),
-                        "schemas", "json")
-mgi_json_schema = os.path.join(schemadir, "mgi-json-schema.json")
-exdir = os.path.join(
-   os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))),
-                        "examples", "json")
+from .config import schema_dir as schemadir, data_dir as datadir, \
+                    examples_dir as exdir
+enh_json_schema = os.path.join(schemadir, "enhanced-json-schema.json")
 ipr_ex = os.path.join(exdir, "ipr.json")
-datadir = os.path.join(os.path.dirname(__file__), "data")
 
 @pytest.fixture(scope="module")
 def validator(request):
-    return val.ExtValidator.with_schema_dir(schemadir)
+    return val.ExtValidator.with_schema_dir(exdir)
 
 def test_ipr(validator):
     # borrowed from test_examples.py, this test exercises most of the features
@@ -30,10 +25,10 @@ def test_ipr(validator):
     #   * resolving $refs via schemas on disk (not quite)
     #   * extension schema validation
     #   * initiating validation on a filename
-    # 
+    #
     validator.validate_file(ipr_ex, False, False)
 
-def test_extschema(validator):
+def test_extschema():
     # borrowed from test_schemas.py, this test exercises most of the features
     # of the validator module.  If the ipr.json example breaks, this breaks.
     #   * initializing a validator with resolver using SchemaHandler
@@ -41,12 +36,13 @@ def test_extschema(validator):
     #   * extension schema validation
     #   * initiating validation on a filename
     # 
-    validator.validate_file(mgi_json_schema, False, True)
+    validator = val.ExtValidator.with_schema_dir(schemadir)
+    validator.validate_file(enh_json_schema, False, True)
 
 class TestExtValidator(object):
 
     def test_isextschemaschema(self, validator):
-        with open(mgi_json_schema) as fd:
+        with open(enh_json_schema) as fd:
             assert validator.is_extschema_schema(json.load(fd))
 
         with open(ipr_ex) as fd:
@@ -56,17 +52,17 @@ class TestExtValidator(object):
         # ...by testing lack of loader
         validator = val.ExtValidator()
         with pytest.raises(val.SchemaError):
-            validator.validate_file(mgi_json_schema, False, True)
+            validator.validate_file(enh_json_schema, False, True)
 
         # This specifically tests the use of RefResolver
-        with open(mgi_json_schema) as fd:
-            mgi = json.load(fd)
+        with open(enh_json_schema) as fd:
+            enh = json.load(fd)
 
         validator = val.ExtValidator()
-        validator._schemaStore[mgi['id']] = mgi
+        validator._schemaStore[enh['id']] = enh
 
         with pytest.raises(val.SchemaError):
-            validator.validate_file(mgi_json_schema, False, True)
+            validator.validate_file(enh_json_schema, False, True)
 
     def test_strict(self, validator):
         probfile = os.path.join(datadir, "unresolvableref.json")
@@ -87,7 +83,8 @@ class TestExtValidator(object):
             validator.validate_file(probfile, False, True)
 
 
-    def test_invalidextension(self, validator):
+    def test_invalidextension(self):
+        validator = val.ExtValidator.with_schema_dir(schemadir)
         probfile = os.path.join(datadir, "invalidextension.json")
 
         # this should work

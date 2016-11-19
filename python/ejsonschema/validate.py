@@ -13,7 +13,8 @@ from . import schemaloader as loader
 from .instance import Instance, EXTSCHEMAS
 
 # These are URIs that identify versions of the JSON Enhanced Schema schem
-EXTSCHEMA_URIS = [ "http://mgi.nist.gov/mgi-json-schema/v0.1" ]
+EXTSCHEMA_URIS = [ "http://mgi.nist.gov/mgi-json-schema/v0.1",
+                   "https://www.nist.gov/od/dm/enhanced-json-schema/v0.1" ]
 
 class ExtValidator(object):
     """
@@ -175,14 +176,11 @@ class ExtValidator(object):
                 self._schemaStore.update(val.resolver.store)
 
     def _spliturifrag(self, uri):
-        parts = urlparse.urldefrag(uri)
-        if not parts[1] and uri.endswith('#'):
-            return (uri, '')
-        return parts
+        return urlparse.urldefrag(uri)
 
     def validate_file(self, filepath, minimally=False, strict=False):
         """
-        open the specified file and validated its contents.  This is 
+        open the specified file and validate its contents.  This is 
         equivalent to loading the JSON in the file and passing it to 
         validate().
         """

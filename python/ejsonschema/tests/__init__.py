@@ -71,6 +71,9 @@ class Tempfiles(object):
     def parent(self):
         return self._parent
 
+    def __call__(self, child):
+        return os.path.join(self.parent, child)
+
     def mkdir(self, dirname):
         d = os.path.join(self.parent, dirname)
         if not os.path.isdir(d):

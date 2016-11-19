@@ -11,11 +11,8 @@ from . import Tempfiles
 import ejsonschema.validate as val
 import ejsonschema.schemaloader as loader
 
-schemadir = os.path.join(
-   os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))),
-                        "schemas", "json")
-mgi_json_schema = os.path.join(schemadir, "mgi-json-schema.json")
-datadir = os.path.join(os.path.dirname(__file__), "data")
+from .config import schema_dir as schemadir, data_dir as datadir
+enh_json_schema = os.path.join(schemadir, "enhanced-json-schema.json")
 
 @pytest.fixture(scope="module")
 def validator(request):
@@ -23,7 +20,7 @@ def validator(request):
 
 schemashell = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "$extensionSchemas": [ "http://mgi.nist.gov/mgi-json-schema/v0.1" ],
+    "$extensionSchemas": [ "https://www.nist.gov/od/dm/enhanced-json-schema/v0.1#" ],
     "id": "urn:goob"
 }
 
@@ -33,7 +30,7 @@ def test_NotesType(validator):
     schema["type"] = "object"
     schema["properties"] = {
         "sayings": {
-            "$ref": "http://mgi.nist.gov/mgi-json-schema/v0.1#/definitions/Notes"
+            "$ref": "https://www.nist.gov/od/dm/enhanced-json-schema/v0.1#/definitions/Notes"
         }
     }
     validator.load_schema(schema)
@@ -49,7 +46,7 @@ def test_NotesType(validator):
     
 def test_DocumentationType(validator):
     schema = schemashell.copy()
-    schema['$ref'] = "http://mgi.nist.gov/mgi-json-schema/v0.1#/definitions/Documentation"
+    schema['$ref'] = "https://www.nist.gov/od/dm/enhanced-json-schema/v0.1#/definitions/Documentation"
     schema['id'] = "urn:doc"
     validator.load_schema(schema)
 
@@ -83,7 +80,7 @@ def test_DocumentationType(validator):
     
 def test_PropDocumentationType(validator):
     schema = schemashell.copy()
-    schema['$ref'] = "http://mgi.nist.gov/mgi-json-schema/v0.1#/definitions/PropertyDocumentation"
+    schema['$ref'] = "https://www.nist.gov/od/dm/enhanced-json-schema/v0.1#/definitions/PropertyDocumentation"
     schema['id'] = "urn:propdoc"
     validator.load_schema(schema)
 

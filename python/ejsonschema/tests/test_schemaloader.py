@@ -77,8 +77,8 @@ class TestSchemaLoader(object):
     def test_from_locationfile(self):
         ldr = loader.SchemaLoader.from_location_file(
             os.path.join(schemadir, "schemaLocation.json"))
-        assert len(ldr) >= 4
-        assert ldr.locate("http://json-schema.org/draft-04/schema#").endswith("/json-schema.json")
+        assert len(ldr) >= 2
+        assert ldr.locate("http://json-schema.org/draft-04/schema").endswith("/json-schema.json")
 
     def test_from_directory(self, schemafiles):
         sdir = os.path.join(schemafiles.parent, "schemas")
@@ -89,14 +89,14 @@ class TestSchemaLoader(object):
         try:
             ldr = loader.SchemaLoader.from_directory(sdir)
             assert len(ldr) == 2
-            assert ldr.locate("http://json-schema.org/draft-04/schema#") == \
-                "json-schema.json"
+            assert ldr.locate("http://json-schema.org/draft-04/schema") == \
+                os.path.join(sdir, "extern", "json-schema.json")
             assert not os.path.exists(locfile)
 
             ldr = loader.SchemaLoader.from_directory(sdir, True)
             assert len(ldr) == 2
-            assert ldr.locate("http://json-schema.org/draft-04/schema#") == \
-                "json-schema.json"
+            assert ldr.locate("http://json-schema.org/draft-04/schema") == \
+                os.path.join(sdir, "extern", "json-schema.json")
             assert os.path.exists(locfile)
             os.remove(locfile)
 
@@ -104,19 +104,19 @@ class TestSchemaLoader(object):
             ldr = loader.SchemaLoader.from_directory(sdir, True, 
                                                      locfile="locations.json")
             assert len(ldr) == 2
-            assert ldr.locate("http://json-schema.org/draft-04/schema#") == \
-                "json-schema.json"
+            assert ldr.locate("http://json-schema.org/draft-04/schema") == \
+                os.path.join(sdir, "extern", "json-schema.json")
             assert not os.path.exists(locfile)
             assert os.path.exists(os.path.join(sdir, "locations.json"))
 
             with open(os.path.join(sdir,"one.json"), "w") as fd:
-                json.dump({ "http://json-schema.org/draft-04/schema#": 
-                            "extern/json-schema.json" }, fd)
+                json.dump({ "http://json-schema.org/draft-04/schema": 
+                            "json-schema.json" }, fd)
             assert os.path.exists(os.path.join(sdir,"one.json"))
             ldr = loader.SchemaLoader.from_directory(sdir, locfile="one.json")
             assert len(ldr) == 1
-            assert ldr.locate("http://json-schema.org/draft-04/schema#") == \
-                os.path.join(sdir, "extern/json-schema.json")
+            assert ldr.locate("http://json-schema.org/draft-04/schema") == \
+                os.path.join(sdir, "json-schema.json")
             assert not os.path.exists(os.path.join(sdir,"schemaLocation.json"))
 
         finally:
@@ -147,23 +147,24 @@ class TestSchemaHandler(object):
 
     def test_compat(self):
         ldr = loader.SchemaLoader(locs)
-        ldr.add_location("http://mgi.nist.gov/mgi-json-schema/v0.1", 
+        ldr.add_location("https://www.nist.gov/od/dm/enhanced-json-schema/v0.1", 
                          schemafile)
         hdlr = loader.SchemaHandler(ldr)
 
         assert "uri" in hdlr
         assert "http" in hdlr
-        assert len(hdlr) == 2
+        assert "https" in hdlr
+        assert len(hdlr) == 3
 
         assert hdlr["uri"] is ldr
         assert hdlr["http"] is ldr
-        assert hdlr["https"] is ldr  # not strict
+        assert hdlr["ftp"] is ldr  # not strict
 
-        schema = hdlr["http"]("http://mgi.nist.gov/mgi-json-schema/v0.1")
+        schema = hdlr["https"]("https://www.nist.gov/od/dm/enhanced-json-schema/v0.1")
         assert isinstance(schema, dict)
         assert "$schema" in schema
         assert "id" in schema
-        assert schema["id"] == "http://mgi.nist.gov/mgi-json-schema/v0.1"
+        assert schema["id"] == "https://www.nist.gov/od/dm/enhanced-json-schema/v0.1"
 
     def test_strict(self):
         ldr = loader.SchemaLoader(locs)
@@ -178,8 +179,17 @@ class TestSchemaHandler(object):
 def schemafiles(request):
     tf = Tempfiles()
     schdir = tf.mkdir("schemas")
+    extern = os.path.join(schdir,"extern")
+    os.mkdir(extern)
     shutil.copy(os.path.join(exdir,"registry-resource_schema.json"), schdir)
-    shutil.copy(os.path.join(schemadir,"json-schema.json"), schdir)
+
+    # this makes sure the schema finder is recursive
+    shutil.copy(os.path.join(schemadir,"json-schema.json"), extern)
+
+    # this ringer makes sure the schema finder can distinguish schema files from
+    # arbitrary JSON data files
+    shutil.copy(os.path.join(exdir,"ipr.json"), schdir)
+
     def fin():
         tf.clean()
     request.addfinalizer(fin)
@@ -188,7 +198,19 @@ def schemafiles(request):
 class TestDirectorySchemaCache(object):
 
     def test_openfile(self, schemafiles):
-        sfile = os.path.join(schemafiles.parent, "schemas", "json-schema.json")
+        sfile = os.path.join(schemafiles.parent, "schemas",
+                             "registry-resource_schema.json")
+        assert os.path.exists(sfile)
+
+        cache = loader.DirectorySchemaCache(schemafiles.parent)
+        id, schema = cache.open_file(sfile)
+
+        assert id == 'http://mgi.nist.gov/json/registry-resource/v0.1#'
+        assert schema['id'] == id
+
+    def test_openfile2(self, schemafiles):
+        sfile = os.path.join(schemafiles.parent, "schemas", "extern",
+                             "json-schema.json")
         assert os.path.exists(sfile)
 
         cache = loader.DirectorySchemaCache(schemafiles.parent)
@@ -201,17 +223,17 @@ class TestDirectorySchemaCache(object):
         sdir = os.path.join(schemafiles.parent, "schemas")
         cache = loader.DirectorySchemaCache(sdir)
         loc = cache.locations()
-        assert loc['http://json-schema.org/draft-04/schema#'] == \
-            "json-schema.json"
+        assert loc['http://json-schema.org/draft-04/schema'] == \
+            os.path.join(sdir, "extern", "json-schema.json")
         assert loc['http://mgi.nist.gov/json/registry-resource/v0.1'] == \
-            "registry-resource_schema.json"
+            os.path.join(sdir, "registry-resource_schema.json")
 
     def test_locations_abs(self, schemafiles):
         sdir = os.path.join(schemafiles.parent, "schemas")
         cache = loader.DirectorySchemaCache(sdir)
         loc = cache.locations(True)
-        assert loc['http://json-schema.org/draft-04/schema#'] == \
-            os.path.join(sdir, "json-schema.json")
+        assert loc['http://json-schema.org/draft-04/schema'] == \
+            os.path.join(sdir, "extern", "json-schema.json")
         assert loc['http://mgi.nist.gov/json/registry-resource/v0.1'] == \
             os.path.join(sdir, "registry-resource_schema.json")
         assert len(loc) == 2
@@ -222,8 +244,8 @@ class TestDirectorySchemaCache(object):
         loc = cache.schemas()
         assert loc['http://json-schema.org/draft-04/schema#']['id'] == \
             "http://json-schema.org/draft-04/schema#"
-        assert loc['http://mgi.nist.gov/json/registry-resource/v0.1']['id'] == \
-            "http://mgi.nist.gov/json/registry-resource/v0.1"
+        assert loc['http://mgi.nist.gov/json/registry-resource/v0.1#']['id'] == \
+            "http://mgi.nist.gov/json/registry-resource/v0.1#"
 
     def test_openfile_fileid(self):
         cache = loader.DirectorySchemaCache(datadir)
@@ -254,8 +276,8 @@ class TestDirectorySchemaCache(object):
         assert os.path.exists(slfile)
         with open(slfile) as fd:
             loc = json.load(fd)
-        assert loc['http://json-schema.org/draft-04/schema#'] == \
-            "json-schema.json"
+        assert loc['http://json-schema.org/draft-04/schema'] == \
+            os.path.join("extern", "json-schema.json")
         assert loc['http://mgi.nist.gov/json/registry-resource/v0.1'] == \
             "registry-resource_schema.json"
 
@@ -279,11 +301,12 @@ class TestDirectorySchemaCache(object):
             if os.path.exists(slfile):
                 os.remove(slfile)
         
-    def test_recursive(self):
-        cache = loader.DirectorySchemaCache(schemadir)
+    def test_recursive(self, schemafiles):
+        sdir = schemafiles("schemas")
+        cache = loader.DirectorySchemaCache(sdir)
 
         locs = cache.locations()
-        assert len(locs) == 7
+        assert len(locs) == 2
 
         locs = cache.locations(recursive=False)
-        assert len(locs) == 6
+        assert len(locs) == 1

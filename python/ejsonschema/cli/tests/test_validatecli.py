@@ -3,17 +3,12 @@ from __future__ import with_statement
 import json, os, sys, pytest, shutil, argparse
 from cStringIO import StringIO
 
-import xjsonschema.cli.validate as cli
+import ejsonschema.cli.validate as cli
 
-schemadir = os.path.join(os.path.dirname(
-   os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))),
-                        "schemas", "json")
-mgi_json_schema = os.path.join(schemadir, "mgi-json-schema.json")
-exdir = os.path.join(os.path.dirname(
-   os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))),
-                        "examples", "json")
+from ...tests.config import schema_dir as schemadir, data_dir as datadir, \
+                            examples_dir as exdir
+enh_json_schema = os.path.join(schemadir, "enhanced-json-schema.json")
 ipr_ex = os.path.join(exdir, "ipr.json")
-datadir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "tests", "data")
 
 class TstSys(object):
     def __init__(self):
@@ -61,7 +56,7 @@ def test_opts(tstsys):
 def test_simple_valid(tstsys):
 
     app = cli.Validate("goob", tstsys.stdout, tstsys.stderr)
-    tstsys.argv[1:] = "-L {0} {1}".format(schemadir, mgi_json_schema).split()
+    tstsys.argv[1:] = "-L {0} {1}".format(schemadir, enh_json_schema).split()
     exit = app.execute()
 
     assert ": valid!" in tstsys.stdout.getvalue()
@@ -82,7 +77,7 @@ def test_simple_invalid(tstsys):
 def test_cant_resolve(tstsys):
 
     app = cli.Validate("goob", tstsys.stdout, tstsys.stderr)
-    tstsys.argv[1:] = "{0}".format(mgi_json_schema).split()
+    tstsys.argv[1:] = "{0}".format(enh_json_schema).split()
     exit = app.execute()
 
     assert "Unable to resolve schema for" in tstsys.stderr.getvalue()
@@ -103,7 +98,7 @@ def test_ignore_ext(tstsys):
 def test_strict(tstsys):
 
     app = cli.Validate("goob", tstsys.stdout, tstsys.stderr)
-    tstsys.argv[1:] = "-L {0} {1}".format(schemadir, ipr_ex).split()
+    tstsys.argv[1:] = "-L {0} {1}".format(exdir, ipr_ex).split()
     exit = app.execute()
 
     assert ": valid!" in tstsys.stdout.getvalue()
