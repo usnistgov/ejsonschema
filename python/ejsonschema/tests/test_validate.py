@@ -1,7 +1,7 @@
 
 # import pytest
 from __future__ import with_statement
-import json, os, pytest, shutil
+import json, os, pytest, shutil, pdb
 from cStringIO import StringIO
 
 from . import Tempfiles
@@ -51,7 +51,7 @@ class TestExtValidator(object):
     def test_usesloader(self):
         # ...by testing lack of loader
         validator = val.ExtValidator()
-        with pytest.raises(val.SchemaError):
+        with pytest.raises(val.RefResolutionError):
             validator.validate_file(enh_json_schema, False, True)
 
         # This specifically tests the use of RefResolver
@@ -61,7 +61,7 @@ class TestExtValidator(object):
         validator = val.ExtValidator()
         validator._schemaStore[enh['id']] = enh
 
-        with pytest.raises(val.SchemaError):
+        with pytest.raises(val.RefResolutionError):
             validator.validate_file(enh_json_schema, False, True)
 
     def test_strict(self, validator):
@@ -73,13 +73,13 @@ class TestExtValidator(object):
         # these should not
         with open(probfile) as fd:
             inst = json.load(fd)
-        with pytest.raises(val.SchemaError):
-            validator.validate_against(inst, "urn:unresolvable.json", True)
+        errs = validator.validate_against(inst, "urn:unresolvable.json", True)
+        assert len(list(filter(lambda e: isinstance(e, val.RefResolutionError),errs))) > 0
 
-        with pytest.raises(val.SchemaError):
+        with pytest.raises(val.RefResolutionError):
             validator.validate(inst, False, True)
 
-        with pytest.raises(val.SchemaError):
+        with pytest.raises(val.RefResolutionError):
             validator.validate_file(probfile, False, True)
 
 
@@ -93,8 +93,8 @@ class TestExtValidator(object):
         # these should not
         with open(probfile) as fd:
             inst = json.load(fd)
-        with pytest.raises(val.ValidationError):
-            validator.validate_against(inst, inst[val.EXTSCHEMAS][0], True)
+        errs = validator.validate_against(inst, inst[val.EXTSCHEMAS][0], True)
+        assert len(list(filter(lambda e: isinstance(e, val.ValidationError),errs))) > 0
 
         with pytest.raises(val.ValidationError):
             validator.validate(inst, False, True)
@@ -120,9 +120,29 @@ class TestExtValidator(object):
         validator.validate_against(inst, [uri])
 
         inst["name"] = 3
-        with pytest.raises(val.ValidationError):
-            validator.validate_against(inst, [uri])
+        errs = validator.validate_against(inst, [uri])
+        assert len(list(filter(lambda e: isinstance(e, val.ValidationError),errs))) > 0
 
         inst["name"] = "bob"
         validator.load_schema(schema)
-        validator.validate_against(inst, [schema['id']])
+        errs = validator.validate_against(inst, [schema['id']])
+        assert len(errs) == 0
+
+def test_exc2json():
+    validator = val.ExtValidator.with_schema_dir(schemadir)
+    probfile = os.path.join(datadir, "invalidextension.json")
+
+    errs = validator.validate_file(probfile, False, True, False)
+    assert len(errs) == 2
+
+    data = [val.exc_to_json(err) for err in errs]
+    assert len(data) == 2
+    assert len(list(filter(lambda e: e['message'], data))) == 2
+    assert len(list(filter(lambda e: e['type'], data))) == 2
+    assert len(list(filter(lambda e: e['type'] == 'validation', data))) == 2
+    assert len(list(filter(lambda e: e['path'], data))) == 2
+    assert len(list(filter(lambda e: e['validator'], data))) == 2
+
+
+        
+        

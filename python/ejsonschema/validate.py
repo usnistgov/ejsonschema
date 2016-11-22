@@ -75,7 +75,8 @@ class ExtValidator(object):
         self._schemaStore[uri] = schema
         
         
-    def validate(self, instance, minimally=False, strict=False, schemauri=None):
+    def validate(self, instance, minimally=False, strict=False, schemauri=None,
+                 raiseex=True):
         """
         validate the instance document against its schema and its extensions
         as directed.  
@@ -87,7 +88,9 @@ class ExtValidator(object):
             raise ValidationError("Base schema ($schema) not specified; " +
                                   "unable to validate")
 
-        self.validate_against(instance, baseSchema, True)
+        out = self.validate_against(instance, baseSchema, True)
+        if raiseex and len(out) > 0:
+            raise out[0]
 
         if not minimally:
             # we need to validate any portions including the EXTSCHEMAS property
@@ -105,7 +108,11 @@ class ExtValidator(object):
                        not isinstance(extensions[ptr][EXTSCHEMAS], dict):
                         msg = "invalid value type for {0} (not an array):\n     {1}"\
                               .format(EXTSCHEMAS, extensions[ptr][EXTSCHEMAS])
-                        raise ValidationError(msg)
+                        ex = ValidationError(msg, instance=extensions[ptr])
+                        if raiseex:
+                            raise ex
+                        out.append(ex)
+                        return out
                     else:
                         # this is the extension schema schema, so ignore this
                         # node
@@ -113,14 +120,23 @@ class ExtValidator(object):
                 
                 for val in extensions[ptr][EXTSCHEMAS]:
                     if not isinstance(val, types.StringTypes):
-                        raise ValidationError(
-                            "invalid {0} array item type:\n    {1}"
-                            .format(EXTSCHEMAS, val))
+                        ex = ValidationError(
+                                "invalid {0} array item type:\n    {1}"
+                                .format(EXTSCHEMAS, val),
+                                instance=extensions[ptr][EXTSCHEMAS])
+                        if raiseex:
+                            raise ex
+                        out.append(ex)
+                        return ex
                     
                 # now validate marked portion
-                self.validate_against(extensions[ptr], 
-                                      extensions[ptr][EXTSCHEMAS], strict)
+                out.extend( self.validate_against(extensions[ptr], 
+                                                  extensions[ptr][EXTSCHEMAS],
+                                                  strict) )
+                if raiseex and len(out) > 0:
+                    raise out[0]
             
+        return out
 
     def validate_against(self, instance, schemauris=[], strict=False):
         """
@@ -132,16 +148,15 @@ class ExtValidator(object):
         :argument instance:  a parsed JSON document to be validated.
         :argument list schemauris:  a list of URIs of the schemas to validate
                                     against.  
-        :argument bool strict:  if True, validation will fail if any of the 
-                                schema URIs cannot be resolved to a schema.
-                                if False, unresolvable schemas URIs will be 
-                                ignored and validation against that schema will
-                                be skipped.  
+
+        :return list: a list of encountered errors in the form of exceptions; 
+                      otherwise, an empty list if the instance is valid against
+                      all schemas.
         """
         if isinstance(schemauris, str) or isinstance(schemauris, unicode):
             schemauris = [ schemauris ]
         schema = None
-        out = True
+        out = []
         for uri in schemauris:
             val = self._validators.get(uri)
             if not val:
@@ -151,10 +166,12 @@ class ExtValidator(object):
                     try:
                         schema = self._loader(urib)
                     except KeyError, e:
+                        ex = RefResolutionError(
+                                "Unable find schema document for " + urib)
                         if strict:
-                            raise SchemaError("Unable to resolve schema for " + 
-                                              urib)
+                            out.append(ex)
                         continue
+                    
                 resolver = jsch.RefResolver(uri, schema, self._schemaStore,
                                             handlers=self._handler)
 
@@ -162,23 +179,36 @@ class ExtValidator(object):
                     try:
                         schema = resolver.resolve_fragment(schema, frag)
                     except RefResolutionError, ex:
-                        raise SchemaError("Unable to resolve fragment, "+frag+
-                                          "from schema, "+ urib)
+                        exc = RefResolutionError(
+                         "Unable to resolve fragment, {0} from schema, {1} ({2})"
+                         .format(frag, urib, str(ex)))
+                        out.append(exc)
+                        continue
 
                 cls = jsch.validator_for(schema)
-                cls.check_schema(schema)
+
+                # check the schema for errors
+                scherrs = [ SchemaError.create_from(err) \
+                            for err in cls(cls.META_SCHEMA).iter_errors(schema) ]
+                if len(scherrs) > 0:
+                    out.extend(scherrs)
+                    continue
+                
                 val = cls(schema, resolver=resolver)
 
-            try:
-                val.validate(instance)
-            finally:
-                self._validators[uri] = val
-                self._schemaStore.update(val.resolver.store)
+
+            out.extend( [err for err in val.iter_errors(instance)] )
+
+            self._validators[uri] = val
+            self._schemaStore.update(val.resolver.store)
+
+        return out
 
     def _spliturifrag(self, uri):
         return urlparse.urldefrag(uri)
 
-    def validate_file(self, filepath, minimally=False, strict=False):
+    def validate_file(self, filepath, minimally=False, strict=False,
+                      raiseex=True):
         """
         open the specified file and validate its contents.  This is 
         equivalent to loading the JSON in the file and passing it to 
@@ -186,7 +216,7 @@ class ExtValidator(object):
         """
         with open(filepath) as fd:
             instance = json.load(fd)
-        self.validate(instance, minimally, strict)
+        return self.validate(instance, minimally, strict, raiseex=raiseex)
 
     def is_extschema_schema(self, instance):
         """
@@ -196,3 +226,52 @@ class ExtValidator(object):
         """
         return instance.get('id') in EXTSCHEMA_URIS and \
                instance.has_key(EXTSCHEMAS)
+
+from jsonschema._utils import format_as_index as format_path, \
+                              indent as indent_json
+
+def exc_to_json(ex):
+    """
+    format the data captured in an exceptions into a JSON data record.
+    """
+    out = {}
+    try:
+        raise ex
+    except (ValidationError, SchemaError, RefResolutionError), e:
+        out.update({
+            'message':     e.message,
+            'validator':   e.validator,
+            'path':        e.path and format_path(e.path),
+            'schema':      e.schema,
+            'schema_path': e.relative_schema_path and \
+                           format_path(list(e.relative_schema_path)[:-1])
+        })
+
+        try:
+            raise e
+        except ValidationError, exc:
+            out['type'] = 'validation'
+        except SchemaError, exc:
+            out['type'] = 'schema'
+        except RefResolutionError, exc:
+            out['type'] = 'resolve'
+    except ValueError, e:
+        out.update({
+            'type':        'json',
+            'message':     str(e),
+            'validator':   None,
+            'path':        None,
+            'schema':      None,
+            'schema_path': None
+        })
+    except Exception, e:
+        out.update({
+            'type':        'unexpected',
+            'message':     str(e),
+            'validator':   None,
+            'path':        None,
+            'schema':      None,
+            'schema_path': None
+        })
+
+    return out
