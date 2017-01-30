@@ -41,8 +41,8 @@ def test_NotesType(validator):
     validator.validate_against(inst, [schema['id']])
 
     inst['sayings'] = "Hello"
-    with pytest.raises(val.ValidationError):
-        validator.validate_against(inst, [schema['id']])
+    errors = validator.validate_against(inst, [schema['id']])
+    assert all( [isinstance(e, val.ValidationError) for e in errors] )
     
 def test_DocumentationType(validator):
     schema = schemashell.copy()
@@ -60,22 +60,22 @@ def test_DocumentationType(validator):
     validator.validate_against(inst, [schema['id']])
 
     inst["notes"] = "1, 2"
-    with pytest.raises(val.ValidationError):
-        validator.validate_against(inst, [schema['id']])
+    errors = validator.validate_against(inst, [schema['id']])
+    assert all( [isinstance(e, val.ValidationError) for e in errors] )
     inst["notes"] = [ "1", "2" ]
     validator.validate_against(inst, [schema['id']])
 
     inst["comments"] = [ 1, 2 ]
-    with pytest.raises(val.ValidationError):
-        validator.validate_against(inst, [schema['id']])
+    errors = validator.validate_against(inst, [schema['id']])
+    assert all( [isinstance(e, val.ValidationError) for e in errors] )
     inst["comments"] = [ "yes", "no" ]
-    validator.validate_against(inst, [schema['id']])
+    assert len(validator.validate_against(inst, [schema['id']])) == 0
 
     inst["description"] = [ "the def" ]
-    with pytest.raises(val.ValidationError):
-        validator.validate_against(inst, [schema['id']])
+    errors = validator.validate_against(inst, [schema['id']])
+    assert all( [isinstance(e, val.ValidationError) for e in errors] )
     inst["description"] = "the def"
-    validator.validate_against(inst, [schema['id']])
+    assert len(validator.validate_against(inst, [schema['id']])) == 0
 
     
 def test_PropDocumentationType(validator):
@@ -104,28 +104,28 @@ def test_PropDocumentationType(validator):
     validator.validate_against(inst, [schema['id']])
 
     inst["notes"] = "1, 2"
-    with pytest.raises(val.ValidationError):
-        validator.validate_against(inst, [schema['id']])
+    errors = validator.validate_against(inst, [schema['id']])
+    assert all( [isinstance(e, val.ValidationError) for e in errors] )
     inst["notes"] = [ "1", "2" ]
-    validator.validate_against(inst, [schema['id']])
+    assert len(validator.validate_against(inst, [schema['id']])) == 0
 
     inst["comments"] = [ 1, 2 ]
-    with pytest.raises(val.ValidationError):
-        validator.validate_against(inst, [schema['id']])
+    errors = validator.validate_against(inst, [schema['id']])
+    assert all( [isinstance(e, val.ValidationError) for e in errors] )
     inst["comments"] = [ "yes", "no" ]
-    validator.validate_against(inst, [schema['id']])
+    assert len(validator.validate_against(inst, [schema['id']])) == 0
 
     inst["description"] = [ "the def" ]
-    with pytest.raises(val.ValidationError):
-        validator.validate_against(inst, [schema['id']])
+    errors = validator.validate_against(inst, [schema['id']])
+    assert all( [isinstance(e, val.ValidationError) for e in errors] )
     inst["description"] = "the def"
-    validator.validate_against(inst, [schema['id']])
+    assert len(validator.validate_against(inst, [schema['id']])) == 0
 
     inst["valueDocumentation"]["Manager"]["comments"] = [ 1, 2 ]
-    with pytest.raises(val.ValidationError):
-        validator.validate_against(inst, [schema['id']])
+    errors = validator.validate_against(inst, [schema['id']])
+    assert all( [isinstance(e, val.ValidationError) for e in errors] )
     inst["valueDocumentation"]["Manager"]["comments"] = [ "1", "2" ]
-    validator.validate_against(inst, [schema['id']])
+    assert len(validator.validate_against(inst, [schema['id']])) == 0
 
     
 def test_topdoc():
