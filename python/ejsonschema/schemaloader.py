@@ -281,9 +281,15 @@ class DirectorySchemaCache(object):
             raise RuntimeError(self._dir + ": not a directory")
 
     def _read_id(self, fd):
-        schema = json.load(fd)
+        try:
+            schema = json.load(fd)
+        except Exception, ex:
+            # JSON syntax error (most likely)
+            raise self.NotASchemaError("JSON content error: " + str(ex))
+        
         if not hasattr(schema, "get") or not hasattr(schema,"__getitem__"):
             raise self.NotASchemaError("Does not contain a JSON object")
+        
         try:
             sid = schema["$schema"]
             if sid not in jsch.validators.meta_schemas:
@@ -319,6 +325,9 @@ class DirectorySchemaCache(object):
                 try:
                     (id, schema) = self.open_file(file)
                     yield file, id, schema
+                except IOError, ex:
+                    # unable to read the file (issue warning?)
+                    continue
                 except self.NotASchemaError, ex:
                     continue
             if not recurse:

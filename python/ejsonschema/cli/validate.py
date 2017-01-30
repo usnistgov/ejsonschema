@@ -76,7 +76,7 @@ class Runner(object):
         try:
             return self.run()
         except Exception, ex:
-            return self.fail(UNEXPECTED, "Unexpected exception: " + repr(ex))
+            return self.fail(UNEXPECTED, "Unexpected exception: " + str(ex))
 
     def run(self):
         return 0
@@ -132,8 +132,8 @@ class Validate(Runner):
 
         if self.opts.loc:
             if not os.path.exists(self.opts.loc):
-                return fail(BADINPUTS, 
-                            self.opts.loc + ": schema file/dir not found")
+                return self.fail(BADINPUTS, 
+                                 self.opts.loc + ": schema file/dir not found")
 
             if os.path.isdir(self.opts.loc):
                 loader = SchemaLoader.from_directory(self.opts.loc)
@@ -169,7 +169,7 @@ class Validate(Runner):
                     self.advise(str(ex))
                 self.tell("{0}: not valid.".format(f))
                 anyinvalid = True
-                if isinstance(ex, SchemaError):
+                if isinstance(ex, (SchemaError, RefResolutionError)):
                     badschema = True
 
 
