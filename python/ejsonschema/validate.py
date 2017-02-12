@@ -227,6 +227,17 @@ class ExtValidator(object):
         return instance.get('id') in EXTSCHEMA_URIS and \
                instance.has_key(EXTSCHEMAS)
 
+def SchemaValidator():
+    """
+    Create a validator is configured to validate Enhanced JSON Schema 
+    schema documents.
+
+    This simply returns an ExtValidator that has Enhanced JSON Schema schema 
+    files pre-cached.  
+    """
+    return ExtValidator(loader.schemaLoader_for_schemas())
+
+
 from jsonschema._utils import format_as_index as format_path, \
                               indent as indent_json
 

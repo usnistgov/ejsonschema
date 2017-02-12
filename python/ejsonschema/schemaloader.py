@@ -19,6 +19,23 @@ except ImportError:
 
 SCHEMA_LOCATION_FILE = "schemaLocation.json"
 
+_schema_schemaLoader = None
+def schemaLoader_for_schemas():
+    global _schema_schemaLoader
+    if not _schema_schemaLoader:
+        schemadir = os.path.join(os.path.dirname(__file__),
+                                 "resources", "schemas")
+        if not os.path.exists(schemadir):
+            fromsrc = os.path.join(os.path.dirname(os.path.dirname(
+                                    os.path.dirname(os.path.abspath(__file__)))),
+                                   "schemas")
+            if os.path.exists(fromsrc):
+                schemadir = fromsrc
+            
+        _schema_schemaLoader = SchemaLoader.from_directory(schemadir)
+
+    return _schema_schemaLoader
+
 class BaseSchemaLoad(object):
 
     def load_schema(self, uri):
@@ -153,6 +170,16 @@ class SchemaLoader(BaseSchemaLoad):
         
         self._map.update(urilocs)
         self._addschemes(urilocs)
+
+    def copy_locations_from(self, loader):
+        """
+        copy the schema locations from another SchemaLoader into this one.
+        Locations form the other loader will overwrite those in this one 
+        for schema IDs in common.  
+
+        :param loader SchemaLoader:  the SchemaLoader to copy locations from
+        """
+        self.add_locations(loader._map)
 
     def load_schema(self, uri):
         """
