@@ -39,6 +39,13 @@ def test_extschema():
     validator = val.ExtValidator.with_schema_dir(schemadir)
     validator.validate_file(enh_json_schema, False, True)
 
+def test_extschema2():
+    # This test is equivalent to test_extschema() except that it uses
+    # SchemaValidator to create the validater
+    # 
+    validator = val.SchemaValidator()
+    validator.validate_file(enh_json_schema, False, True)
+
 class TestExtValidator(object):
 
     def test_isextschemaschema(self, validator):

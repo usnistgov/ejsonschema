@@ -128,7 +128,15 @@ class TestSchemaLoader(object):
             locfile = os.path.join(sdir, "one.json")
             if os.path.exists(locfile):
                 os.remove(locfile)
-                
+
+def test_schemaLoader_for_schemas():
+    ldr = loader.schemaLoader_for_schemas()
+    loc = ldr.locate("https://www.nist.gov/od/dm/enhanced-json-schema/v0.1")
+    assert os.path.basename(loc) == "enhanced-json-schema.json"
+    assert os.path.exists(loc)
+    loc = ldr.locate("http://json-schema.org/draft-04/schema")
+    assert os.path.basename(loc) == "json-schema.json"
+    assert os.path.exists(loc)
 
 class TestSchemaHandler(object):
 
