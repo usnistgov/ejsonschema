@@ -5,7 +5,7 @@ import os, sys, errno, json
 from argparse import ArgumentParser
 from ..validate import ExtValidator
 from ..validate import ValidationError, SchemaError, RefResolutionError
-from ..schemaloader import SchemaLoader
+from ..schemaloader import SchemaLoader, schemaLoader_for_schemas 
 
 description = \
 """validate one or more JSON documents against their schemas"""
@@ -40,6 +40,10 @@ def define_opts(progname=None):
     parser.add_argument('-s', '--silent', action='store_true', 
                         help="suppress all output; the exit code indicates "
                             +"if any of the files are invalid.")
+    parser.add_argument('-e', '--load-enhanced-schemas', action='store_true',
+                        dest="loadejs",
+                        help="load schemas needed to validate EJS schema  "
+                            +"documents (can be overridden by -L).")
 
     return parser
 
@@ -128,7 +132,7 @@ class Validate(Runner):
 
         Command line arguments are parsed from sys.argv.  
         """
-        loader = None
+        loader = (self.opts.loadejs and schemaLoader_for_schemas()) or None
 
         if self.opts.loc:
             if not os.path.exists(self.opts.loc):
@@ -136,11 +140,15 @@ class Validate(Runner):
                                  self.opts.loc + ": schema file/dir not found")
 
             if os.path.isdir(self.opts.loc):
-                loader = SchemaLoader.from_directory(self.opts.loc)
+                ldr = SchemaLoader.from_directory(self.opts.loc)
             else:
-                loader = SchemaLoader.from_location_file(self.opts.loc)
+                ldr = SchemaLoader.from_location_file(self.opts.loc)
 
-
+            if loader:
+                loader.copy_locations_from(ldr)
+            else:
+                loader = ldr
+            
         val = ExtValidator(loader)
 
         doc = None

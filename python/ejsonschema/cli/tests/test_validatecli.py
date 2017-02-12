@@ -63,6 +63,16 @@ def test_simple_valid(tstsys):
     assert not tstsys.stderr.getvalue()
     assert exit == 0
 
+def test_load_ejs(tstsys):
+
+    app = cli.Validate("goob", tstsys.stdout, tstsys.stderr)
+    tstsys.argv[1:] = "-e {0}".format(enh_json_schema).split()
+    exit = app.execute()
+
+    assert ": valid!" in tstsys.stdout.getvalue()
+    assert not tstsys.stderr.getvalue()
+    assert exit == 0
+
 def test_simple_invalid(tstsys):
 
     baddoc = os.path.join(datadir, "invalidextension.json")
