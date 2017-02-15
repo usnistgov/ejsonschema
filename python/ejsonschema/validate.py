@@ -12,6 +12,8 @@ from jsonschema.exceptions import (ValidationError, SchemaError,
 from . import schemaloader as loader
 from .instance import Instance, EXTSCHEMAS
 
+SCHEMATAG = "schema"
+
 # These are URIs that identify versions of the JSON Enhanced Schema schem
 EXTSCHEMA_URIS = [ "http://mgi.nist.gov/mgi-json-schema/v0.1",
                    "https://www.nist.gov/od/dm/enhanced-json-schema/v0.1" ]
@@ -19,11 +21,32 @@ EXTSCHEMA_URIS = [ "http://mgi.nist.gov/mgi-json-schema/v0.1",
 class ExtValidator(object):
     """
     A validator that can validate an instance against multiple schemas
+
+    Instances checked by this validator can include special properties that 
+    control the validation.  The $schema property at the root of a JSON object
+    indicates the URI identifier for the main or core schema to validate the 
+    object against.  Any object can also have a $extendedSchemas property
+    which is a list whose values are URIs identifiers for so-called extended 
+    schemas; these are additional schemas that the object should also be 
+    compliant with.  When minimally=False in a call to validate(), the object
+    will also be validated against those schemas as well as the core one.  
+
+    Some applications (most notably MongoDB) does not like documents with 
+    properties starting with $.  The validator can configured to look for its
+    special properties assuming a different prefix via the ejsprefix parameter
+    to the constructor.  For example, setting ejsprefix='_' will cause the 
+    validator to look for properties '_schema' and '_extendedSchemas'
     """
 
-    def __init__(self, schemaLoader=None):
+    def __init__(self, schemaLoader=None, ejsprefix='$'):
         """
         initialize the validator for a set of expected schemas
+
+        :param schemaLoader SchemaLoader:  the SchemaLoader instance to use for 
+                                finding schemas to use during the validation
+        :param ejsprefix str:  a prefix to expect to precede special properties 
+                               used in the validation process (namely *schema
+                               and *extendedSchemas); the default is '$'.
         """
         if not schemaLoader:
             schemaLoader = loader.SchemaLoader()
@@ -31,9 +54,10 @@ class ExtValidator(object):
         self._handler = loader.SchemaHandler(schemaLoader)
         self._schemaStore = {}
         self._validators = {}
+        self._epfx = ejsprefix
 
     @classmethod
-    def with_schema_dir(self, dirpath):
+    def with_schema_dir(self, dirpath, ejsprefix='$'):
         """
         Create an ExtValidator that leverages schema cached as files in a 
         directory.  
@@ -49,7 +73,8 @@ class ExtValidator(object):
         files.  See schemaloader.SchemaLoader for more information about 
         creating loaders for schema files on disk.  
         """
-        return ExtValidator(loader.SchemaLoader.from_directory(dirpath))
+        return ExtValidator(loader.SchemaLoader.from_directory(dirpath),
+                            ejsprefix=ejsprefix)
 
     def load_schema(self, schema, uri=None):
         """
@@ -81,11 +106,13 @@ class ExtValidator(object):
         validate the instance document against its schema and its extensions
         as directed.  
         """
+        schematag = self._epfx + SCHEMATAG
+        extschemas = self._epfx + EXTSCHEMAS
         baseSchema = schemauri
         if not baseSchema:
-            baseSchema = instance.get("$schema")
+            baseSchema = instance.get(schematag)
         if not baseSchema:
-            raise ValidationError("Base schema ($schema) not specified; " +
+            raise ValidationError("Base schema ("+schematag+") not specified; " +
                                   "unable to validate")
 
         out = self.validate_against(instance, baseSchema, True)
@@ -94,7 +121,7 @@ class ExtValidator(object):
 
         if not minimally:
             # we need to validate any portions including the EXTSCHEMAS property
-            inst = Instance(instance)
+            inst = Instance(instance, extschemastag=extschemas)
             extensions = dict(inst.find_extended_objs())
 
             # If instance is actually an extension schema schema, we need to
@@ -103,11 +130,11 @@ class ExtValidator(object):
             
             for ptr in extensions:
                 # make sure that the EXTSCHEMAS property is invoked properly
-                if not isinstance(extensions[ptr][EXTSCHEMAS], list):
+                if not isinstance(extensions[ptr][extschemas], list):
                     if not is_extschema or \
-                       not isinstance(extensions[ptr][EXTSCHEMAS], dict):
+                       not isinstance(extensions[ptr][extschemas], dict):
                         msg = "invalid value type for {0} (not an array):\n     {1}"\
-                              .format(EXTSCHEMAS, extensions[ptr][EXTSCHEMAS])
+                              .format(extschemas, extensions[ptr][extschemas])
                         ex = ValidationError(msg, instance=extensions[ptr])
                         if raiseex:
                             raise ex
@@ -118,12 +145,12 @@ class ExtValidator(object):
                         # node
                         continue
                 
-                for val in extensions[ptr][EXTSCHEMAS]:
+                for val in extensions[ptr][extschemas]:
                     if not isinstance(val, types.StringTypes):
                         ex = ValidationError(
                                 "invalid {0} array item type:\n    {1}"
-                                .format(EXTSCHEMAS, val),
-                                instance=extensions[ptr][EXTSCHEMAS])
+                                .format(extschemas, val),
+                                instance=extensions[ptr][extschemas])
                         if raiseex:
                             raise ex
                         out.append(ex)
@@ -131,7 +158,7 @@ class ExtValidator(object):
                     
                 # now validate marked portion
                 out.extend( self.validate_against(extensions[ptr], 
-                                                  extensions[ptr][EXTSCHEMAS],
+                                                  extensions[ptr][extschemas],
                                                   strict) )
                 if raiseex and len(out) > 0:
                     raise out[0]
@@ -225,7 +252,7 @@ class ExtValidator(object):
         Schema (Supporting Extensions) _and_ an "$extensionSchema" property.
         """
         return instance.get('id') in EXTSCHEMA_URIS and \
-               instance.has_key(EXTSCHEMAS)
+               instance.has_key(self._epfx+EXTSCHEMAS)
 
 def SchemaValidator():
     """

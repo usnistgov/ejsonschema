@@ -7,6 +7,7 @@ from cStringIO import StringIO
 from . import Tempfiles
 import ejsonschema.validate as val
 import ejsonschema.schemaloader as loader
+from ejsonschema.instance import DEF_EXTSCHEMAS
 
 from .config import schema_dir as schemadir, data_dir as datadir, \
                     examples_dir as exdir
@@ -100,7 +101,7 @@ class TestExtValidator(object):
         # these should not
         with open(probfile) as fd:
             inst = json.load(fd)
-        errs = validator.validate_against(inst, inst[val.EXTSCHEMAS][0], True)
+        errs = validator.validate_against(inst, inst[DEF_EXTSCHEMAS][0], True)
         assert len(list(filter(lambda e: isinstance(e, val.ValidationError),errs))) > 0
 
         with pytest.raises(val.ValidationError):
