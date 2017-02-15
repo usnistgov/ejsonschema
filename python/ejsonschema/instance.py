@@ -8,7 +8,8 @@ import os, json, jsonspec.pointer
 from urlparse import urlparse
 from urllib2 import urlopen
 
-EXTSCHEMAS = "$extensionSchemas"
+EXTSCHEMAS = "extensionSchemas"
+DEF_EXTSCHEMAS = "$"+EXTSCHEMAS
 
 class Instance(object):
     """
@@ -16,7 +17,8 @@ class Instance(object):
     of extended JSON schemas
     """
 
-    def __init__(self, data, srcloc=None, srcid=None, jptr="/"):
+    def __init__(self, data, srcloc=None, srcid=None, jptr="/",
+                 extschemastag=DEF_EXTSCHEMAS):
         """
         initialize the Instance wrapper
 
@@ -39,18 +41,23 @@ class Instance(object):
         :argument str jptr:    the JSON Pointer within the source file that 
                                   points to the given data.  If not given, it 
                                   can be assumed that the pointer is "/".  
+        :argument str extschemastag:  the name of the property containing the
+                                  the list of extension schema URIs that a
+                                  JSON object is compliant with (default:
+                                  "$extensionSchemas")
         """
         self.data = data
         self._srcid = srcid
         self._srcloc = srcloc
         self._ptr = jptr
+        self._exttag = extschemastag
 
         if isinstance(self.data, dict):
             if not self._srcid:
                 self._srcid = self.data.get('id')
 
     @classmethod
-    def from_location(cls, loc):
+    def from_location(cls, loc, extschemastag=DEF_EXTSCHEMAS):
         """
         Open the source location (either a file or a URL) and load its
         JSON data into an Instance instance
@@ -79,7 +86,7 @@ class Instance(object):
             # Otherwise, pass off to urllib and assume utf-8
             data = json.loads(urlopen(uri).read().decode("utf-8"))
 
-        return Instance(data, loc)
+        return Instance(data, loc, extschemastag=extschemastag)
 
 
 
@@ -176,7 +183,7 @@ class Instance(object):
         objects (including the root object, if applicable) that contains 
         the "$exensionSchemas" property.  
         """
-        return self.find_obj_by_prop(EXTSCHEMAS)
+        return self.find_obj_by_prop(self._exttag)
 
     def extract(self, jptr):
         """

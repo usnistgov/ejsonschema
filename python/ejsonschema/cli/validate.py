@@ -44,6 +44,16 @@ def define_opts(progname=None):
                         dest="loadejs",
                         help="load schemas needed to validate EJS schema  "
                             +"documents (can be overridden by -L).")
+    parser.add_argument('-M', '--mongodb-safe', action='store_const',
+                        dest="epfx", const='_', default='$', 
+                        help="use a MongoDB-safe convention for special "
+                            +"validation properties, starting them with _ "
+                            +"instead of a $")
+    parser.add_argument('--val-prop-prefix', action='store', dest="epfx",
+                        metavar='PRE', type=str,
+                        help="expect the special validation properties in the "
+                            +"instance documents to start with the prefix given "
+                            +"by PRE (default: '$')")
 
     return parser
 
@@ -149,7 +159,7 @@ class Validate(Runner):
             else:
                 loader = ldr
             
-        val = ExtValidator(loader)
+        val = ExtValidator(loader, ejsprefix=self.opts.epfx)
 
         doc = None
         anyinvalid = False
