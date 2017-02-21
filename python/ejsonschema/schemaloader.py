@@ -270,7 +270,7 @@ class DirectorySchemaCache(object):
 
         def __init__(self, why=None, filepath=None):
             self.filename = None
-            self.path = filepath
+            self._path = filepath
             self.why = why
 
         @property
@@ -293,8 +293,8 @@ class DirectorySchemaCache(object):
             if self.filename:
                 out += self.filename + ": "
             out += "Not a JSON Schema document"
-            if why:
-                out += ": " + why
+            if self.why:
+                out += ": " + self.why
             return out
 
     def __init__(self, dirpath):

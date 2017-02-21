@@ -247,11 +247,13 @@ class ExtValidator(object):
 
     def is_extschema_schema(self, instance):
         """
-        return true if the given JSON instance has both an "id" property
-        set to one of the recognized URIs for a version of the JSON Enhanced 
-        Schema (Supporting Extensions) _and_ an "$extensionSchema" property.
+        return true if the given JSON instance is an object that has both an 
+        "id" property set to one of the recognized URIs for a version of the 
+        JSON Enhanced Schema (Supporting Extensions) _and_ an "$extensionSchema" 
+        property.
         """
-        return instance.get('id') in EXTSCHEMA_URIS and \
+        return hasattr(instance,'get') and hasattr(instance,'has_key') and \
+               instance.get('id') in EXTSCHEMA_URIS and \
                instance.has_key(self._epfx+EXTSCHEMAS)
 
 def SchemaValidator():
