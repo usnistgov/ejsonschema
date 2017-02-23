@@ -2,9 +2,11 @@
 The implementation for the script that provides the command-line interface (CLI)
 """
 import os, sys, errno, json
+from cStringIO import StringIO
 from argparse import ArgumentParser
 from ..validate import ExtValidator
 from ..validate import ValidationError, SchemaError, RefResolutionError
+from ..validate import MissingSchemaDocument
 from ..schemaloader import SchemaLoader, schemaLoader_for_schemas 
 
 description = \
@@ -40,6 +42,9 @@ def define_opts(progname=None):
     parser.add_argument('-s', '--silent', action='store_true', 
                         help="suppress all output; the exit code indicates "
                             +"if any of the files are invalid.")
+    parser.add_argument('-v', '--verbose', action='store_true', 
+                        help="provide additional messages; useful for "
+                            +"troubleshooting")
     parser.add_argument('-e', '--load-enhanced-schemas', action='store_true',
                         dest="loadejs",
                         help="load schemas needed to validate EJS schema  "
@@ -142,6 +147,11 @@ class Validate(Runner):
 
         Command line arguments are parsed from sys.argv.  
         """
+        if self.opts.silent:
+            self.opts.quiet = False
+        if self.opts.quiet:
+            self.opts.verbose = False
+
         loader = (self.opts.loadejs and schemaLoader_for_schemas()) or None
 
         if self.opts.loc:
@@ -180,7 +190,17 @@ class Validate(Runner):
             except (ValidationError, SchemaError, RefResolutionError), ex:
                 f = os.path.basename(filename)
                 self.advise("{0}:".format(f))
-                if isinstance(ex, RefResolutionError):
+                if isinstance(ex, MissingSchemaDocument):
+                    self.advise("Warning: "+str(ex))
+                    if self.opts.verbose:
+                        mfd = StringIO()
+                        mfd.write("Cached schemas available:")
+                        for sid in loader.iterURIs():
+                            mfd.write("\n   ")
+                            mfd.write(sid)
+                        self.advise(mfd.getvalue())
+                        
+                elif isinstance(ex, RefResolutionError):
                     self.advise("Unable to resolve reference in schema: "+
                                 str(ex))
                 else:

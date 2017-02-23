@@ -91,7 +91,7 @@ def test_cant_resolve(tstsys):
     tstsys.argv[1:] = "{0}".format(enh_json_schema).split()
     exit = app.execute()
 
-    assert "Unable to resolve reference in schema" in tstsys.stderr.getvalue()
+    assert "Unable to find schema document" in tstsys.stderr.getvalue()
     assert ": not valid" in tstsys.stdout.getvalue()
     assert exit == 2
 
@@ -123,7 +123,7 @@ def test_strict(tstsys):
     tstsys.argv[1:] = "-L {0} -C {1}".format(exdir, ipr_ex).split()
     exit = app.execute()
 
-    assert "Unable to resolve reference in schema" in tstsys.stderr.getvalue()
+    assert "Unable to find schema document" in tstsys.stderr.getvalue()
     assert ": not valid" in tstsys.stdout.getvalue()
     assert exit == 2
 
@@ -133,7 +133,7 @@ def test_schema_override(tstsys):
     tstsys.argv[1:] = "-L {0} -S urn:gurn {1}".format(exdir, ipr_ex).split()
     exit = app.execute()
 
-    assert "Unable to resolve reference in schema" in tstsys.stderr.getvalue()
+    assert "Unable to find schema document" in tstsys.stderr.getvalue()
     assert ": not valid" in tstsys.stdout.getvalue()
     assert exit == 2
     
