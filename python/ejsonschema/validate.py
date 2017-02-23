@@ -193,8 +193,8 @@ class ExtValidator(object):
                     try:
                         schema = self._loader(urib)
                     except KeyError, e:
-                        ex = RefResolutionError(
-                                "Unable find schema document for " + urib)
+                        ex = MissingSchemaDocument(
+                                "Unable to find schema document for " + urib)
                         if strict:
                             out.append(ex)
                         continue
@@ -265,6 +265,12 @@ def SchemaValidator():
     files pre-cached.  
     """
     return ExtValidator(loader.schemaLoader_for_schemas())
+
+class MissingSchemaDocument(RefResolutionError):
+    """
+    An error indicating that a needed schema document cannot be loaded.
+    """
+    pass
 
 
 from jsonschema._utils import format_as_index as format_path, \
