@@ -2,7 +2,7 @@
 The implementation for the script that provides the command-line interface (CLI)
 """
 import os, sys, errno, json
-from cStringIO import StringIO
+from io import StringIO
 from argparse import ArgumentParser
 from ..validate import ExtValidator
 from ..validate import ValidationError, SchemaError, RefResolutionError
@@ -94,7 +94,7 @@ class Runner(object):
         self.opts = self._parser.parse_args(args)
         try:
             return self.run()
-        except Exception, ex:
+        except Exception as ex:
             return self.fail(UNEXPECTED, "Unexpected exception: " + str(ex))
 
     def run(self):
@@ -187,7 +187,7 @@ class Validate(Runner):
 
                 if not self.opts.silent:
                     self.tell("{0}: valid!".format(os.path.basename(filename)))
-            except (ValidationError, SchemaError, RefResolutionError), ex:
+            except (ValidationError, SchemaError, RefResolutionError) as ex:
                 f = os.path.basename(filename)
                 self.advise("{0}:".format(f))
                 if isinstance(ex, MissingSchemaDocument):

@@ -5,7 +5,7 @@ This suite tests the validation of schemas that use the enhanced documentation.
 from __future__ import with_statement
 import json, os, pytest, shutil
 import jsonschema as jsch
-from cStringIO import StringIO
+from io import StringIO
 
 from . import Tempfiles
 import ejsonschema.validate as val

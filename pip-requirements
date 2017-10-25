@@ -2,3 +2,4 @@ jsonschema>=2.5.0
 json-spec>=0.9.16
 requests
 pytest
+coverage

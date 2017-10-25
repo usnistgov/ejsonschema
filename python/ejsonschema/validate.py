@@ -3,7 +3,15 @@ a module that provides support for validating schemas that support
 extended json-schema tags.
 """
 from __future__ import with_statement
-import sys, os, types, json, urlparse
+import sys, os, json
+from collections import Mapping
+try:
+    # python 3
+    import urllib.parse as urlparse
+    from builtins import str as unicode
+except ImportError:
+    import urlparse
+
 import jsonschema
 import jsonschema.validators as jsch
 from jsonschema.exceptions import (ValidationError, SchemaError, 
@@ -147,7 +155,7 @@ class ExtValidator(object):
                         continue
                 
                 for val in extensions[ptr][extschemas]:
-                    if not isinstance(val, types.StringTypes):
+                    if not isinstance(val, (str, unicode)):
                         ex = ValidationError(
                                 "invalid {0} array item type:\n    {1}"
                                 .format(extschemas, val),
@@ -181,7 +189,7 @@ class ExtValidator(object):
                       otherwise, an empty list if the instance is valid against
                       all schemas.
         """
-        if isinstance(schemauris, str) or isinstance(schemauris, unicode):
+        if isinstance(schemauris, (str, unicode)):
             schemauris = [ schemauris ]
         schema = None
         out = []
@@ -193,7 +201,7 @@ class ExtValidator(object):
                 if not schema:
                     try:
                         schema = self._loader(urib)
-                    except KeyError, e:
+                    except KeyError as e:
                         ex = MissingSchemaDocument(
                                 "Unable to find schema document for " + urib)
                         if strict:
@@ -206,7 +214,7 @@ class ExtValidator(object):
                 if frag:
                     try:
                         schema = resolver.resolve_fragment(schema, frag)
-                    except RefResolutionError, ex:
+                    except RefResolutionError as ex:
                         exc = RefResolutionError(
                          "Unable to resolve fragment, {0} from schema, {1} ({2})"
                          .format(frag, urib, str(ex)))
@@ -253,9 +261,9 @@ class ExtValidator(object):
         JSON Enhanced Schema (Supporting Extensions) _and_ an "$extensionSchema" 
         property.
         """
-        return hasattr(instance,'get') and hasattr(instance,'has_key') and \
+        return isinstance(instance, Mapping) and \
                instance.get('id') in EXTSCHEMA_URIS and \
-               instance.has_key(self._epfx+EXTSCHEMAS)
+               self._epfx+EXTSCHEMAS in instance
 
 def SchemaValidator():
     """
@@ -284,7 +292,7 @@ def exc_to_json(ex):
     out = {}
     try:
         raise ex
-    except (ValidationError, SchemaError, RefResolutionError), e:
+    except (ValidationError, SchemaError, RefResolutionError) as e:
         out.update({
             'message':     e.message,
             'validator':   e.validator,
@@ -296,13 +304,13 @@ def exc_to_json(ex):
 
         try:
             raise e
-        except ValidationError, exc:
+        except ValidationError as exc:
             out['type'] = 'validation'
-        except SchemaError, exc:
+        except SchemaError as exc:
             out['type'] = 'schema'
-        except RefResolutionError, exc:
+        except RefResolutionError as exc:
             out['type'] = 'resolve'
-    except ValueError, e:
+    except ValueError as e:
         out.update({
             'type':        'json',
             'message':     str(e),
@@ -311,7 +319,7 @@ def exc_to_json(ex):
             'schema':      None,
             'schema_path': None
         })
-    except Exception, e:
+    except Exception as e:
         out.update({
             'type':        'unexpected',
             'message':     str(e),

@@ -2,7 +2,7 @@
 # import pytest
 from __future__ import with_statement
 import json, os, pytest, shutil, pdb
-from cStringIO import StringIO
+from io import StringIO
 
 from . import Tempfiles
 import ejsonschema.validate as val
