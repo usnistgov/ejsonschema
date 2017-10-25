@@ -1,0 +1,37 @@
+language: python
+
+os:
+    - linux
+
+# Setting sudo to false opts in to Travis-CI container-based builds.
+sudo: false
+
+# addons:
+#    apt:
+#        packages:
+#            - something
+
+
+env:
+    global:
+      - PYTHON_VERSION=2.7
+      - TEST_CMD='pytest'
+
+    matrix:
+      - PYTHON_VERSION=2.7 
+
+matrix:
+    fast_finish: true
+
+    include:
+      - os: linux
+        env: PYTHON_VERSION=2.7 EVENT_TYPE='pull_request push cron'
+        
+
+install:
+  - pip install -r pip-requirements
+
+script:
+  - cd python && $TEST_CMD
+
+
