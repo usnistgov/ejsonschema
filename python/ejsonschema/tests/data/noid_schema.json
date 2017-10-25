@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema",
-  "$extensionSchemas": ["https://www.nist.gov/od/dm/enhanced-json-schema/v0.1"],
+  "$extensionSchemas": ["https://data.nist.gov/od/dm/enhanced-json-schema/v0.1"],
   "patch": "0",
   "title": "Registry Resource record schema",
   "description": "a resource record format for use in a registry",

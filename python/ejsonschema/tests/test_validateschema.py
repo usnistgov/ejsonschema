@@ -20,7 +20,7 @@ def validator(request):
 
 schemashell = {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "$extensionSchemas": [ "https://www.nist.gov/od/dm/enhanced-json-schema/v0.1#" ],
+    "$extensionSchemas": [ "https://data.nist.gov/od/dm/enhanced-json-schema/v0.1#" ],
     "id": "urn:goob"
 }
 
@@ -30,7 +30,7 @@ def test_NotesType(validator):
     schema["type"] = "object"
     schema["properties"] = {
         "sayings": {
-            "$ref": "https://www.nist.gov/od/dm/enhanced-json-schema/v0.1#/definitions/Notes"
+            "$ref": "https://data.nist.gov/od/dm/enhanced-json-schema/v0.1#/definitions/Notes"
         }
     }
     validator.load_schema(schema)
@@ -46,7 +46,7 @@ def test_NotesType(validator):
     
 def test_DocumentationType(validator):
     schema = schemashell.copy()
-    schema['$ref'] = "https://www.nist.gov/od/dm/enhanced-json-schema/v0.1#/definitions/Documentation"
+    schema['$ref'] = "https://data.nist.gov/od/dm/enhanced-json-schema/v0.1#/definitions/Documentation"
     schema['id'] = "urn:doc"
     validator.load_schema(schema)
 
@@ -77,10 +77,26 @@ def test_DocumentationType(validator):
     inst["description"] = "the def"
     assert len(validator.validate_against(inst, [schema['id']])) == 0
 
+def test_oldschemauri(validator):
+    """
+    test that we can validate schemas that reference deprecated URIs for the 
+    ejsonschema schema.  As long as the deprecated URI has an entry in the 
+    [schema_dir]/schemaLocation.json file, it should work.  
+    """
+    schema = schemashell.copy()
+    schema["$extensionSchemas"] = [ "https://www.nist.gov/od/dm/enhanced-json-schema/v0.1#" ]
+    schema['$ref'] = "https://www.nist.gov/od/dm/enhanced-json-schema/v0.1#/definitions/Documentation"
+    schema['id'] = "urn:doc"
+
+    validator.validate(schema, strict=True)
+    
+    schema["$extensionSchemas"] = [ "https://goober.nist.gov/od/dm/enhanced-json-schema/v0.1#" ]
+    with pytest.raises(val.MissingSchemaDocument):
+        validator.validate(schema, strict=True)
     
 def test_PropDocumentationType(validator):
     schema = schemashell.copy()
-    schema['$ref'] = "https://www.nist.gov/od/dm/enhanced-json-schema/v0.1#/definitions/PropertyDocumentation"
+    schema['$ref'] = "https://data.nist.gov/od/dm/enhanced-json-schema/v0.1#/definitions/PropertyDocumentation"
     schema['id'] = "urn:propdoc"
     validator.load_schema(schema)
 

@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "$extensionSchemas": ["https://www.nist.gov/od/dm/enhanced-json-schema/v0.1"],
+  "$extensionSchemas": ["https://data.nist.gov/od/dm/enhanced-json-schema/v0.1"],
   "id": "http://mgi.nist.gov/json/res-md/v1.0wd",
   "title": "Resource metadata type library",
   "description": "a library of schemas for describing resources in a data federation",

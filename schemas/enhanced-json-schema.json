@@ -1,7 +1,7 @@
 {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "$extensionSchemas": [ "https://www.nist.gov/od/dm/enhanced-json-schema/v0.1#" ],
-    "id": "https://www.nist.gov/od/dm/enhanced-json-schema/v0.1",
+    "$extensionSchemas": [ "https://data.nist.gov/od/dm/enhanced-json-schema/v0.1#" ],
+    "id": "https://data.nist.gov/od/dm/enhanced-json-schema/v0.1",
     "title": "Enhanced JSON Schema supporting extensions validation",
     "description": "An extension of json-schema that defines additional non-validating properties that support richer annotation of a schema and interpretation of instances",
     "definitions": {

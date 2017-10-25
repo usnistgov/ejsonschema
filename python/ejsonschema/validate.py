@@ -16,7 +16,8 @@ SCHEMATAG = "schema"
 
 # These are URIs that identify versions of the JSON Enhanced Schema schem
 EXTSCHEMA_URIS = [ "http://mgi.nist.gov/mgi-json-schema/v0.1",
-                   "https://www.nist.gov/od/dm/enhanced-json-schema/v0.1" ]
+                   "https://www.nist.gov/od/dm/enhanced-json-schema/v0.1",
+                   "https://data.nist.gov/od/dm/enhanced-json-schema/v0.1" ]
 
 class ExtValidator(object):
     """
