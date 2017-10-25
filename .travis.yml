@@ -1,5 +1,9 @@
 language: python
 
+python:
+  - "2.7"
+  - "3.6"
+
 os:
     - linux
 
@@ -25,10 +29,10 @@ matrix:
 
     include:
       - os: linux
-        env: PYTHON_VERSION=2.7 EVENT_TYPE='pull_request push cron'
+#        env: PYTHON_VERSION=2.7 EVENT_TYPE='pull_request push cron'
         
-      - os: linux
-        env: PYTHON_VERSION=3.5 EVENT_TYPE='pull_request push cron'
+#      - os: linux
+#        env: PYTHON_VERSION=3.5 EVENT_TYPE='pull_request push cron'
         
 
 install:
