@@ -1,7 +1,11 @@
 # import pytest
-from __future__ import with_statement
 import json, os, sys, pytest, shutil, argparse
-from cStringIO import StringIO
+try:
+    # python 2
+    from cStringIO import StringIO
+except ImportError:
+    # python 3
+    from io import StringIO
 
 import ejsonschema.cli.validate as cli
 

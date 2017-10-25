@@ -1,7 +1,8 @@
 # import pytest
 from __future__ import with_statement
 import json, os, pytest
-from cStringIO import StringIO
+from io import StringIO
+
 import ejsonschema.location as location
 
 jsonloc = """
@@ -58,7 +59,7 @@ class TestLocationReader(object):
         assert not rdr.basedir
         assert rdr.deffmt == 'txt'
         assert rdr.parsers 
-        assert rdr.parsers.has_key('json') and rdr.parsers.has_key('txt')
+        assert 'json' in rdr.parsers and 'txt' in rdr.parsers
 
         rdr = location.LocationReader('/usr/local/etc')
         assert rdr
@@ -76,16 +77,16 @@ class TestLocationReader(object):
         assert rdr
         assert not rdr.basedir
         assert rdr.parsers 
-        assert rdr.parsers.has_key('json') and rdr.parsers.has_key('txt') \
-           and rdr.parsers.has_key('text') 
-        assert rdr.parsers.has_key('txt') is rdr.parsers.has_key('text') 
+        assert 'json' in rdr.parsers and 'txt' in rdr.parsers \
+           and 'text' in rdr.parsers 
+        assert ('txt' in rdr.parsers) is ('text' in rdr.parsers)
         rdr = location.LocationReader(parsers=parsers)
         assert rdr
         assert not rdr.basedir
         assert rdr.parsers 
-        assert rdr.parsers.has_key('json') and rdr.parsers.has_key('txt') \
-           and rdr.parsers.has_key('text') 
-        assert rdr.parsers.has_key('txt') is rdr.parsers.has_key('text') 
+        assert 'json' in rdr.parsers and 'txt' in rdr.parsers \
+           and 'text' in rdr.parsers 
+        assert ('txt' in rdr.parsers) is ('text' in rdr.parsers) 
 
 
     def test_read_json(self):

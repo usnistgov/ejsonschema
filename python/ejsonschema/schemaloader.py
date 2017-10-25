@@ -3,11 +3,16 @@ a module that provides support for loading schemas, particularly those
 cached on local disk.  
 """
 from __future__ import with_statement
+import six
 import sys, os, json, errno
-
-from urlparse import urlparse
-from urllib2 import urlopen
 from collections import Mapping
+try:
+    from urllib.parse import urlparse
+    from urllib.request import urlopen
+except ImportError:
+    from urlparse import urlparse
+    from urllib2 import urlopen
+
 import jsonschema as jsch
 
 from .location import read_loc_file
@@ -143,7 +148,7 @@ class SchemaLoader(BaseSchemaLoad):
         """
         return an iterator for the uris mapped in this instance
         """
-        return self._map.iterkeys()
+        return six.iterkeys(self._map)
 
     def __len__(self):
         return len(self._map)
@@ -310,7 +315,7 @@ class DirectorySchemaCache(object):
     def _read_id(self, fd):
         try:
             schema = json.load(fd)
-        except Exception, ex:
+        except Exception as ex:
             # JSON syntax error (most likely)
             raise self.NotASchemaError("JSON content error: " + str(ex))
         
@@ -335,7 +340,7 @@ class DirectorySchemaCache(object):
         with open(filepath) as fd:
             try:
                 (id, schema) = self._read_id(fd)
-            except self.NotASchemaError, ex:
+            except self.NotASchemaError as ex:
                 ex.path = filename
                 raise
 
@@ -352,10 +357,10 @@ class DirectorySchemaCache(object):
                 try:
                     (id, schema) = self.open_file(file)
                     yield file, id, schema
-                except IOError, ex:
+                except IOError as ex:
                     # unable to read the file (issue warning?)
                     continue
-                except self.NotASchemaError, ex:
+                except self.NotASchemaError as ex:
                     continue
             if not recurse:
                 break

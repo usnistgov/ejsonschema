@@ -1,7 +1,7 @@
 # import pytest
 from __future__ import with_statement
 import json, os, pytest, shutil
-from cStringIO import StringIO
+from io import StringIO
 
 from . import Tempfiles
 import ejsonschema.schemaloader as loader

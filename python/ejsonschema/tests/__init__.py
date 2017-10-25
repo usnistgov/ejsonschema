@@ -85,7 +85,7 @@ class Tempfiles(object):
         self._files.add(filename)
 
     def clean(self):
-        for i in xrange(len(self._files)):
+        for i in range(len(self._files)):
             filen = self._files.pop()
             path = os.path.join(self._parent, filen)
             if os.path.exists(path):

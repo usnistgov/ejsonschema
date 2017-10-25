@@ -5,7 +5,10 @@ local disk.
 """
 from __future__ import with_statement
 import sys, os, json
-from urlparse import urlparse
+try:
+    from urllib.parse import urlparse
+except ImportError:
+    from urlparse import urlparse
 
 def parse_mappings_asjson(fd):
     """
@@ -127,7 +130,7 @@ class LocationReader(object):
 
         # turn simple file URIs into paths; turn relative paths into 
         # absolute ones
-        for uri, loc in out.iteritems():
+        for uri, loc in out.items():
             locurl = urlparse(loc, scheme='file')
             if locurl.scheme == 'file' and not locurl.netloc:
                 loc = locurl.path

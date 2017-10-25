@@ -5,8 +5,12 @@ extended JSON schemas
 from __future__ import with_statement
 
 import os, json, jsonspec.pointer
-from urlparse import urlparse
-from urllib2 import urlopen
+try:
+    from urllib.parse import urlparse
+    from urllib.request import urlopen
+except ImportError:
+    from urlparse import urlparse
+    from urllib2 import urlopen
 
 EXTSCHEMAS = "extensionSchemas"
 DEF_EXTSCHEMAS = "$"+EXTSCHEMAS
@@ -131,7 +135,7 @@ class Instance(object):
 
     def _find_prop_by_name(self, name, data, out, path=""):
         if isinstance(data, dict):
-            if data.has_key(name):
+            if name in data:
                 out.append( ("/".join((path,name)), data[name]) )
 
             for prop in data:
@@ -139,13 +143,13 @@ class Instance(object):
                                         "/".join([path,prop]))
 
         if isinstance(data, list):
-            for i in xrange(len(data)):
+            for i in range(len(data)):
                 self._find_prop_by_name(name, data[i], out, 
                                         "/".join([path,str(i)]))
 
     def _find_obj_by_prop(self, name, data, out, path=""):
         if isinstance(data, dict):
-            if data.has_key(name):
+            if name in data:
                 out.append( (path or "/", data) )
 
             for prop in data:
@@ -153,7 +157,7 @@ class Instance(object):
                                        "/".join([path,prop]))
 
         if isinstance(data, list):
-            for i in xrange(len(data)):
+            for i in range(len(data)):
                 self._find_obj_by_prop(name, data[i], out, 
                                        "/".join([path,str(i)]))
 
