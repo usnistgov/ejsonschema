@@ -74,7 +74,7 @@ considered a work in the public domain (as per 17 U.S.C 105).  See
 https://www.nist.gov/director/licensing for details.
 
 This package is available on GitHub at
-https://github.com/usnistgov/xjsonschema.  This repository serves as a
+https://github.com/usnistgov/ejsonschema.  This repository serves as a
 platform for open community collaboration to enable and encourage
 greater sharing of and interoperability between research data from
 around the world.  Except where otherwise noted, the content and
