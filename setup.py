@@ -17,6 +17,10 @@ class build_py(_build_py):
         for f in glob.glob(os.path.join(self._schema_dir, "*-schema.json")):
             self.copy_file(f, os.path.join(self.build_lib, dest,
                                            os.path.basename(f)))
+        for f in glob.glob(os.path.join(self._schema_dir, "schemaLocation.*")):
+            self.copy_file(f, os.path.join(self.build_lib, dest,
+                                           os.path.basename(f)))
+        
 
     def run(self):
         _build_py.run(self)
