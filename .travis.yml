@@ -7,6 +7,10 @@ python:
 os:
     - linux
 
+env:
+    global:
+      - TEST_CMD=pytest
+
 # Setting sudo to false opts in to Travis-CI container-based builds.
 sudo: false
 
