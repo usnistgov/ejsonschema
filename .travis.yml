@@ -1,0 +1,26 @@
+language: python
+
+python:
+  - "2.7"
+#  - "3.6"
+
+os:
+    - linux
+
+env:
+    global:
+      - TEST_CMD=pytest
+
+# Setting sudo to false opts in to Travis-CI container-based builds.
+sudo: false
+
+matrix:
+    fast_finish: true
+
+install:
+  - pip install -r pip-requirements
+
+script:
+  - cd python && $TEST_CMD
+
+
