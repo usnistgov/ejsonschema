@@ -131,7 +131,7 @@ class TestSchemaLoader(object):
 
 def test_schemaLoader_for_schemas():
     ldr = loader.schemaLoader_for_schemas()
-    loc = ldr.locate("https://www.nist.gov/od/dm/enhanced-json-schema/v0.1")
+    loc = ldr.locate("https://data.nist.gov/od/dm/enhanced-json-schema/v0.1")
     assert os.path.basename(loc) == "enhanced-json-schema.json"
     assert os.path.exists(loc)
     loc = ldr.locate("http://json-schema.org/draft-04/schema")
@@ -155,7 +155,7 @@ class TestSchemaHandler(object):
 
     def test_compat(self):
         ldr = loader.SchemaLoader(locs)
-        ldr.add_location("https://www.nist.gov/od/dm/enhanced-json-schema/v0.1", 
+        ldr.add_location("https://data.nist.gov/od/dm/enhanced-json-schema/v0.1", 
                          schemafile)
         hdlr = loader.SchemaHandler(ldr)
 
@@ -168,11 +168,11 @@ class TestSchemaHandler(object):
         assert hdlr["http"] is ldr
         assert hdlr["ftp"] is ldr  # not strict
 
-        schema = hdlr["https"]("https://www.nist.gov/od/dm/enhanced-json-schema/v0.1")
+        schema = hdlr["https"]("https://data.nist.gov/od/dm/enhanced-json-schema/v0.1")
         assert isinstance(schema, dict)
         assert "$schema" in schema
         assert "id" in schema
-        assert schema["id"] == "https://www.nist.gov/od/dm/enhanced-json-schema/v0.1"
+        assert schema["id"] == "https://data.nist.gov/od/dm/enhanced-json-schema/v0.1"
 
     def test_strict(self):
         ldr = loader.SchemaLoader(locs)
