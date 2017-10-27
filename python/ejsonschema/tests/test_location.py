@@ -88,6 +88,13 @@ class TestLocationReader(object):
            and 'text' in rdr.parsers 
         assert ('txt' in rdr.parsers) is ('text' in rdr.parsers) 
 
+    def test_read_badjsonfmt(self):
+        rdr = location.LocationReader()
+
+        badlocfile = os.path.join(datadir, "noid_schema.json")
+        with pytest.raises(ValueError):
+            data = rdr.read(badlocfile, fmt='json', basedir="")
+
 
     def test_read_json(self):
         rdr = location.LocationReader()

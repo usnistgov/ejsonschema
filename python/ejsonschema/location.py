@@ -131,6 +131,9 @@ class LocationReader(object):
         # turn simple file URIs into paths; turn relative paths into 
         # absolute ones
         for uri, loc in out.items():
+            if not isinstance(loc, (str, unicode)):
+                raise ValueError("Bad location value in schemaLocation file "+
+                                 "(not a str); is file a schemaLocation file?")
             locurl = urlparse(loc, scheme='file')
             if locurl.scheme == 'file' and not locurl.netloc:
                 loc = locurl.path
