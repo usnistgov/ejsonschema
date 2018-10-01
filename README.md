@@ -35,12 +35,18 @@ array property called "$extensionSchemas".
 documentation properties that can be included in the JSON Schema
 document for a richer description of the schema.)
 
-This package will look for the "$schema" and "$extensionSchema"
-properties and validates the JSON nodes accordingly.  Note that the
-"$extensionSchema" property can appear in any object node embedded
-within the instance document; validation against the extended schemas
-will occur only within the object nodes where the "$extensionSchema"
-property appears.  (See the docs directory for more information.)
+This package includes a validator that can be engaged either via a 
+command-line script,
+[scripts/validate](https://github.com/usnistgov/ejsonschema.git), or 
+via the python API.  The validator will look for the "$schema" and 
+"$extensionSchema" properties and validates the JSON nodes accordingly.  
+Note that the "$extensionSchema" property can appear in any object node
+embedded within the instance document; validation against the extended 
+schemas will occur only within the object nodes where the "$extensionSchema"
+property appears.  Further, the validator can be configured to look for 
+cached schemas on local disk.  Execute the [validate
+script](https://github.com/usnistgov/ejsonschema.git) with the `-h` option 
+for more information.  
 
 This technique allows for a kind of polymorphism of JSON types defined
 in the schemas (similar to what "xsi:type" provides in XML).  
