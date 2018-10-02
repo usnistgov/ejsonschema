@@ -7,7 +7,7 @@ core schema and one or more "extended" schemas.
 This package is based on an extension of the JSON Schema
 (http://json-schema.org) called Extensible JSON Schema.  With the
 standard JSON Schema specification, an instance JSON document that is
-compliant with a JSON Schema but also contain additional properties
+compliant with a JSON Schema can also contain additional properties
 not defined by the Schema.  This allows different producers of JSON
 documents to insert additional properties into a document without
 breaking its compliance with the common schema.  Consumers that do not
