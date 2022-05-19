@@ -89,7 +89,7 @@ class SchemaLoader(BaseSchemaLoad):
 
     @classmethod
     def from_directory(cls, dirpath, ensure_locfile=False, 
-                       locfile=SCHEMA_LOCATION_FILE):
+                       locfile=SCHEMA_LOCATION_FILE, logger=None):
         """
         create a schemaLoader for schemas stored as files under a given 
         directory.  This factory method will attempt to load schema file 
@@ -302,9 +302,10 @@ class DirectorySchemaCache(object):
                 out += ": " + self.why
             return out
 
-    def __init__(self, dirpath):
+    def __init__(self, dirpath, logger=None):
         self._dir = dirpath
         self._checkdir()
+        self.logger = logger
 
     def _checkdir(self):
         if not os.path.exists(self._dir):
@@ -354,6 +355,8 @@ class DirectorySchemaCache(object):
             dir = dir[len(self._dir)+1:]
             for file in map(lambda p: os.path.join(dir, p), 
                             filter(lambda f: f.endswith(".json"), filenames)):
+                if self.logger:
+                    self.logger.info("loading schema file: "+file)
                 try:
                     (id, schema) = self.open_file(file)
                     yield file, id, schema
@@ -361,6 +364,14 @@ class DirectorySchemaCache(object):
                     # unable to read the file (issue warning?)
                     continue
                 except self.NotASchemaError as ex:
+                    if self.logger:
+                        basedir = self._dir
+                        if not basedir.endswith('/'):
+                            basedir += "/"
+                        fpath = ex.path
+                        if file.startswith(basedir):
+                            fpath = fpath[len(basedir):]
+                        self.logger.warn(fpath+": Unable to load file as a schema: "+str(ex))
                     continue
             if not recurse:
                 break

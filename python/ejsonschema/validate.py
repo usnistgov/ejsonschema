@@ -47,7 +47,7 @@ class ExtValidator(object):
     validator to look for properties '_schema' and '_extendedSchemas'
     """
 
-    def __init__(self, schemaLoader=None, ejsprefix='$'):
+    def __init__(self, schemaLoader=None, ejsprefix='$', logger=None):
         """
         initialize the validator for a set of expected schemas
 
@@ -56,6 +56,8 @@ class ExtValidator(object):
         :param ejsprefix str:  a prefix to expect to precede special properties 
                                used in the validation process (namely *schema
                                and *extendedSchemas); the default is '$'.
+        :param logger logging.Logger:  if provided, messages about otherwise 
+                               silent activities will reported through this logger
         """
         if not schemaLoader:
             schemaLoader = loader.SchemaLoader()
@@ -64,9 +66,10 @@ class ExtValidator(object):
         self._schemaStore = {}
         self._validators = {}
         self._epfx = ejsprefix
+        self._logger = logger
 
     @classmethod
-    def with_schema_dir(self, dirpath, ejsprefix='$'):
+    def with_schema_dir(self, dirpath, ejsprefix='$', logger=None):
         """
         Create an ExtValidator that leverages schema cached as files in a 
         directory.  
@@ -82,8 +85,11 @@ class ExtValidator(object):
         files.  See schemaloader.SchemaLoader for more information about 
         creating loaders for schema files on disk.  
         """
-        return ExtValidator(loader.SchemaLoader.from_directory(dirpath),
-                            ejsprefix=ejsprefix)
+        ldrlogger = None
+        if logger:
+            ldrlogger = logger.getChild("schemaLoader")
+        return ExtValidator(loader.SchemaLoader.from_directory(dirpath, logger=ldrlogger),
+                            ejsprefix=ejsprefix, logger=logger)
 
     def load_schema(self, schema, uri=None):
         """
