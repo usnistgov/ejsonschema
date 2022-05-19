@@ -109,7 +109,9 @@ class SchemaLoader(BaseSchemaLoad):
         if os.path.exists(locpath):
             out.load_locations(locpath, dirpath)
         else:
-            dc = DirectorySchemaCache(dirpath)
+            if logger:
+                logger = logger.getChild("dsc")
+            dc = DirectorySchemaCache(dirpath, logger=logger)
             out.add_locations(dc.locations())
             if ensure_locfile:
                 dc.save_locations(locfile)
@@ -355,6 +357,7 @@ class DirectorySchemaCache(object):
             dir = dir[len(self._dir)+1:]
             for file in map(lambda p: os.path.join(dir, p), 
                             filter(lambda f: f.endswith(".json"), filenames)):
+                print("Trying to load schema file: "+file)
                 if self.logger:
                     self.logger.info("loading schema file: "+file)
                 try:
