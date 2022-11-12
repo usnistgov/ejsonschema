@@ -357,7 +357,6 @@ class DirectorySchemaCache(object):
             dir = dir[len(self._dir)+1:]
             for file in map(lambda p: os.path.join(dir, p), 
                             filter(lambda f: f.endswith(".json"), filenames)):
-                print("Trying to load schema file: "+file)
                 if self.logger:
                     self.logger.info("loading schema file: "+file)
                 try:
