@@ -103,7 +103,7 @@ class SchemaLoader(BaseSchemaLoad):
         if not os.path.isdir(dirpath):
             raise RuntimeError(dirpath + ": not a directory")
 
-        out = SchemaLoader()
+        out = cls()
 
         locpath = os.path.join(dirpath, locfile)
         if os.path.exists(locpath):
@@ -126,7 +126,7 @@ class SchemaLoader(BaseSchemaLoad):
                                 relative paths will be assumed to be relative
                                 to the directory containing the location file. 
         """
-        out = SchemaLoader()
+        out = cls()
         out.load_locations(locpath, basedir)
         return out
 
