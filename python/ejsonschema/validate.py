@@ -66,7 +66,7 @@ class ExtValidator(object):
         self._epfx = ejsprefix
 
     @classmethod
-    def with_schema_dir(self, dirpath, ejsprefix='$'):
+    def with_schema_dir(cls, dirpath, ejsprefix='$'):
         """
         Create an ExtValidator that leverages schema cached as files in a 
         directory.  
@@ -82,8 +82,8 @@ class ExtValidator(object):
         files.  See schemaloader.SchemaLoader for more information about 
         creating loaders for schema files on disk.  
         """
-        return ExtValidator(loader.SchemaLoader.from_directory(dirpath),
-                            ejsprefix=ejsprefix)
+        return cls(loader.SchemaLoader.from_directory(dirpath),
+                   ejsprefix=ejsprefix)
 
     def load_schema(self, schema, uri=None):
         """
