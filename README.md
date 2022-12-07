@@ -53,10 +53,10 @@ in the schemas (similar to what "xsi:type" provides in XML).
 
 ## Dependencies
 
-The xjsonschema library has the following dependencies:
+The ejsonschema library has the following dependencies:
 
-   * python 2.7.x  (python 3.x not yet supported)
-   * jsonschema 2.5.x or later
+   * python 2.7, 3.5 or later
+   * jsonschema 2.5.x (support for draft4 or earlier only)
    * jsonspec 0.9.16 or later
    * requests
 
