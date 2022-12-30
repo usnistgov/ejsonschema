@@ -1,0 +1,58 @@
+{
+    "$schema": "http://json-schema.org/draft/2020-12/schema",
+    "@extensionSchemas": [
+        "https://data.nist.gov/od/dm/json-extension-schemas/v0.2",
+        "https://data.nist.gov/od/dm/enhanced-doc-schema/v0.2"
+    ],
+    "$id": "https://data.nist.gov/od/dm/json-extension-schemas/v0.2",
+    "$vocabulary": {
+        "https://json-schema.org/draft/2020-12/vocab/core": true,
+        "https://json-schema.org/draft/2020-12/vocab/applicator": true,
+        "https://json-schema.org/draft/2020-12/vocab/unevaluated": true,
+        "https://json-schema.org/draft/2020-12/vocab/validation": true,
+        "https://json-schema.org/draft/2020-12/vocab/meta-data": true,
+        "https://json-schema.org/draft/2020-12/vocab/format-annotation": true,
+        "https://json-schema.org/draft/2020-12/vocab/content": true
+    },
+
+    "title": "Extensible JSON Schema supporting validation of instance-asserted schema compliance",
+    "description": "This schema serves as an extension of the JSON Schema standard that allows an instance document to claim directly its compliance with multiple schemas.  In particular, it is built around assertion of compliance with a core schema, which can be validated with a standard JSON Schema validator implementation, along assertions of compliance with additional extension schemas.",
+    "$comment": "This is a revision of the v0.1 schema that was based on the draft-04 jsonschema spec, updating it to the 2020-12 draft.  This retains only the keywords that are used in instance documents to signal schema compliance.",
+
+    "$defs": {
+        "WithExtensions": {
+            "description": "a definition of the properties indicate that a JSON object is compliant with one or more schemas",
+            "type": "object",
+            "properties": {
+                "@extensionSchemas": {
+                    "description": "a list of the schemas that the object is compliant with, given as URIs",
+                    "type": "array",
+                    "items": { "type": "string", "format": "url" }
+                }
+            }
+        },
+
+        "ExtendedDocument": {
+            "description": "a definition of properties that describes a document's support for the Extensible JSON Schema conventions",
+            "allOf": [
+                { "$ref": "#/$defs/WithExtensions" },
+                {
+                    "properties": {
+                        "@schema": {
+                            "description": "the URI for base schema that this document asserts it is compliant with",
+                            "notes": [
+                                "Applications may use this URI as an indentifier of the type of document and, thus, what properties it should expect it to contain.",
+                                "Normally, this keyword would only appear in the outer-most object in a JSON document.  It may appear in embedded objects when the overall JSON stream is to be treated as a collection of documents to be split and consumed separately."
+                            ],
+                            "type": "string",
+                            "format": "url"
+                        }
+                    }
+                }
+            ]
+        }
+    },
+
+    "$ref": "#/$defs/ExtendedDocument"
+}
+

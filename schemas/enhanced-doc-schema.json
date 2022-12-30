@@ -1,0 +1,140 @@
+{
+    "$schema": "http://json-schema.org/draft/2020-12/schema",
+    "@extensionSchemas": [ "https://data.nist.gov/od/dm/enhanced-doc-schema/v0.2" ],
+    "$id": "https://data.nist.gov/od/dm/enhanced-doc-schema/v0.2",
+    "$vocabulary": {
+        "https://json-schema.org/draft/2020-12/vocab/core": true,
+        "https://json-schema.org/draft/2020-12/vocab/applicator": true,
+        "https://json-schema.org/draft/2020-12/vocab/unevaluated": true,
+        "https://json-schema.org/draft/2020-12/vocab/validation": true,
+        "https://json-schema.org/draft/2020-12/vocab/meta-data": true,
+        "https://json-schema.org/draft/2020-12/vocab/format-annotation": true,
+        "https://json-schema.org/draft/2020-12/vocab/content": true
+    },
+
+    "title": "A vocabulary for enhanced documentation of JSON schemas",
+    "description": "This JSON Schema vocabulary provides additional markup for documenting a JSON Schema document in a machine-readable way.  It builds on the definitions in the standard meta-data vocabulary and the core property, $comment",
+    "$comment": "This is a revision of the v0.1 ejsonschema schema that was based on the draft-04 JSON Schema specification, updating it to the 2020-12 draft.  This is specifically the meta-schema defining additional annotation keywords for enhanched documentation of schemas.",
+
+    "$defs": {
+        "Notes": {
+            "type": "array",
+            "description": "a list of comments that apply to the thing being described",
+            "notes": [
+                "This is intended for use whereever the descriptions property is allowed",
+                "The convention of this extension of json-schema is that the description property contains the definitive semantic definition of the property.",
+                "Each note item captures a separate idea (like a paragraph)"
+            ],
+            "items": { "type": "string" }
+        },
+
+        "Documentation": {
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "description": "the definition of the item being documented",
+                    "notes": [
+                        "This property has a more precise semantic definition than the corresponding property from the meta-data vocabulary as its value is expected to expressed as a definition.  Consumers of this vocabulary should assume as such."
+                    ]
+                },
+                "notes": {
+                    "$ref": "#/definitions/Notes",
+                    "description": "additional information and advice on the use of the thing being defined"
+                },
+                "equivalentTo": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "An identifier for a metadata definition that this property is semantically equivalent"
+                }
+            }
+        },
+
+        "StringPropertyDocumentation": {
+            "description": "documentation specifically for an object property",
+            "allOf": [
+                { "$ref": "#/definitions/Documentation" },
+                {
+                    "properties": { 
+                        "valueDocumentation": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "$ref": "#/definitions/Documentation"
+                            },
+                            "description": "definitions of recognized string values for the property being defined",
+                            "notes": [
+                                "Each property name (within valueDocumentation) is an allowed value of the property being defined.  The values give the semantic meaning of the value.",
+                                "valueDescription can be used to define enumerated values; however, use of enum is not required.  Even when any value is allowed for the property, valueDocumentation can be used to define specially recognized values."
+                            ]
+                        }
+                    }
+                } 
+            ]
+        },
+
+        "EnhancedSchemaArray": {
+            "description": "an array of enhanced schema definitions",
+            "allOf": [
+                { "$ref": "http://json-schema.org/draft/2020-12/meta/applicator#/$defs/schemaArray" },
+                {
+                    "items": { "$ref": "#/$defs/EnhancedSchema" }
+                }
+            ]
+        },
+
+        "EnhancedSchema": {
+            "description": "JSON schema description with enhancements for documentation",
+            "allOf": [
+                { "$ref": "http://json-schema.org/draft/2020-12/schema" },
+                { "$ref": "#/$defs/StringPropertyDocumentation" },
+                {
+                    "properties": {
+                        "$defs": {
+                            "additionalProperties": {
+                                "$ref": "#/$defs/EnhancedSchema"
+                            }
+                        },
+
+                        "properties": {
+                            "additionalProperties": {
+                                "$ref": "#/$defs/EnhancedSchema"
+                            }
+                        },
+
+                        "patternProperties": {
+                            "additionalProperties": {
+                                "$ref": "#/$defs/EnhancedSchema"
+                            }
+                        },
+
+                        "additionalProperties": {
+                            "anyOf": [
+                                { "type": "boolean" },
+                                { "$ref": "#/$defs/EnhancedSchema" }
+                            ]
+                        },
+
+                        "dependentSchemas": {
+                            "type": "object",
+                            "additionalProperties": { 
+                                "$ref": "#/$defs/EnhancedSchema" 
+                            }
+                        },
+
+                        "prefixItems": { "$ref": "#/$defs/EnhancedSchemaArray" },
+                        "items": { "$ref": "#/$defs/EnhancedSchema" },
+
+                        "if": { "$ref": "#/$defs/EnhancedSchema" },
+                        "then": { "$ref": "#/$defs/EnhancedSchema" },
+                        "else": { "$ref": "#/$defs/EnhancedSchema" },
+                        "allOf": { "$ref": "#/$defs/EnhancedSchemaArray" },
+                        "anyOf": { "$ref": "#/$defs/EnhancedSchemaArray" },
+                        "oneOf": { "$ref": "#/$defs/EnhancedSchemaArray" },
+                        "not": { "$ref": "#/$defs/EnhancedSchema" }
+                    }
+                }
+            ]
+        }
+    },
+
+    "$ref": "#/$defs/EnhancedSchema" 
+}
