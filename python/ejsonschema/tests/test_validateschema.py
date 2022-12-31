@@ -12,7 +12,7 @@ import ejsonschema.validate as val
 import ejsonschema.schemaloader as loader
 
 from .config import schema_dir as schemadir, data_dir as datadir
-enh_json_schema = os.path.join(schemadir, "enhanced-json-schema.json")
+enh_json_schema = os.path.join(schemadir, "enhanced-json-schema-v0.1.json")
 
 @pytest.fixture(scope="module")
 def validator(request):

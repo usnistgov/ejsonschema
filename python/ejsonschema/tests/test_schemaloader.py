@@ -13,7 +13,7 @@ locs = {
 
 from .config import schema_dir as schemadir, data_dir as datadir, \
                     examples_dir as exdir
-schemafile = os.path.join(schemadir, 'enhanced-json-schema.json')
+schemafile = os.path.join(schemadir, 'enhanced-json-schema-v0.1.json')
 
 class TestSchemaLoader(object):
 
@@ -78,7 +78,7 @@ class TestSchemaLoader(object):
         ldr = loader.SchemaLoader.from_location_file(
             os.path.join(schemadir, "schemaLocation.json"))
         assert len(ldr) >= 2
-        assert ldr.locate("http://json-schema.org/draft-04/schema").endswith("/json-schema.json")
+        assert ldr.locate("http://json-schema.org/draft-04/schema").endswith("/json-schema-draft04.json")
 
     def test_from_directory(self, schemafiles):
         sdir = os.path.join(schemafiles.parent, "schemas")
@@ -90,13 +90,13 @@ class TestSchemaLoader(object):
             ldr = loader.SchemaLoader.from_directory(sdir)
             assert len(ldr) == 2
             assert ldr.locate("http://json-schema.org/draft-04/schema") == \
-                os.path.join(sdir, "extern", "json-schema.json")
+                os.path.join(sdir, "extern", "json-schema-draft04.json")
             assert not os.path.exists(locfile)
 
             ldr = loader.SchemaLoader.from_directory(sdir, True)
             assert len(ldr) == 2
             assert ldr.locate("http://json-schema.org/draft-04/schema") == \
-                os.path.join(sdir, "extern", "json-schema.json")
+                os.path.join(sdir, "extern", "json-schema-draft04.json")
             assert os.path.exists(locfile)
             os.remove(locfile)
 
@@ -105,18 +105,18 @@ class TestSchemaLoader(object):
                                                      locfile="locations.json")
             assert len(ldr) == 2
             assert ldr.locate("http://json-schema.org/draft-04/schema") == \
-                os.path.join(sdir, "extern", "json-schema.json")
+                os.path.join(sdir, "extern", "json-schema-draft04.json")
             assert not os.path.exists(locfile)
             assert os.path.exists(os.path.join(sdir, "locations.json"))
 
             with open(os.path.join(sdir,"one.json"), "w") as fd:
                 json.dump({ "http://json-schema.org/draft-04/schema": 
-                            "json-schema.json" }, fd)
+                            "json-schema-draft04.json" }, fd)
             assert os.path.exists(os.path.join(sdir,"one.json"))
             ldr = loader.SchemaLoader.from_directory(sdir, locfile="one.json")
             assert len(ldr) == 1
             assert ldr.locate("http://json-schema.org/draft-04/schema") == \
-                os.path.join(sdir, "json-schema.json")
+                os.path.join(sdir, "json-schema-draft04.json")
             assert not os.path.exists(os.path.join(sdir,"schemaLocation.json"))
 
         finally:
@@ -132,10 +132,10 @@ class TestSchemaLoader(object):
 def test_schemaLoader_for_schemas():
     ldr = loader.schemaLoader_for_schemas()
     loc = ldr.locate("https://data.nist.gov/od/dm/enhanced-json-schema/v0.1")
-    assert os.path.basename(loc) == "enhanced-json-schema.json"
+    assert os.path.basename(loc) == "enhanced-json-schema-v0.1.json"
     assert os.path.exists(loc)
     loc = ldr.locate("http://json-schema.org/draft-04/schema")
-    assert os.path.basename(loc) == "json-schema.json"
+    assert os.path.basename(loc) == "json-schema-draft04.json"
     assert os.path.exists(loc)
 
 class TestSchemaHandler(object):
@@ -192,7 +192,7 @@ def schemafiles(request):
     shutil.copy(os.path.join(exdir,"registry-resource_schema.json"), schdir)
 
     # this makes sure the schema finder is recursive
-    shutil.copy(os.path.join(schemadir,"json-schema.json"), extern)
+    shutil.copy(os.path.join(schemadir,"json-schema-draft04.json"), extern)
 
     # this ringer makes sure the schema finder can distinguish schema files from
     # arbitrary JSON data files
@@ -218,7 +218,7 @@ class TestDirectorySchemaCache(object):
 
     def test_openfile2(self, schemafiles):
         sfile = os.path.join(schemafiles.parent, "schemas", "extern",
-                             "json-schema.json")
+                             "json-schema-draft04.json")
         assert os.path.exists(sfile)
 
         cache = loader.DirectorySchemaCache(schemafiles.parent)
@@ -232,7 +232,7 @@ class TestDirectorySchemaCache(object):
         cache = loader.DirectorySchemaCache(sdir)
         loc = cache.locations()
         assert loc['http://json-schema.org/draft-04/schema'] == \
-            os.path.join(sdir, "extern", "json-schema.json")
+            os.path.join(sdir, "extern", "json-schema-draft04.json")
         assert loc['http://mgi.nist.gov/json/registry-resource/v0.1'] == \
             os.path.join(sdir, "registry-resource_schema.json")
 
@@ -241,7 +241,7 @@ class TestDirectorySchemaCache(object):
         cache = loader.DirectorySchemaCache(sdir)
         loc = cache.locations(True)
         assert loc['http://json-schema.org/draft-04/schema'] == \
-            os.path.join(sdir, "extern", "json-schema.json")
+            os.path.join(sdir, "extern", "json-schema-draft04.json")
         assert loc['http://mgi.nist.gov/json/registry-resource/v0.1'] == \
             os.path.join(sdir, "registry-resource_schema.json")
         assert len(loc) == 2
@@ -285,7 +285,7 @@ class TestDirectorySchemaCache(object):
         with open(slfile) as fd:
             loc = json.load(fd)
         assert loc['http://json-schema.org/draft-04/schema'] == \
-            os.path.join("extern", "json-schema.json")
+            os.path.join("extern", "json-schema-draft04.json")
         assert loc['http://mgi.nist.gov/json/registry-resource/v0.1'] == \
             "registry-resource_schema.json"
 

@@ -288,8 +288,7 @@ class MissingSchemaDocument(RefResolutionError):
     pass
 
 
-from jsonschema._utils import format_as_index as format_path, \
-                              indent as indent_json
+from jsonschema._utils import format_as_index as format_path
 
 def exc_to_json(ex):
     """
@@ -302,16 +301,17 @@ def exc_to_json(ex):
         out.update({
             'message':     e.message,
             'validator':   e.validator,
-            'path':        e.path and format_path(e.path),
+            'path':        e.path and format_path("schema", e.path),
             'schema':      e.schema,
             'schema_path': e.relative_schema_path and \
-                           format_path(list(e.relative_schema_path)[:-1])
+                           format_path("schema", list(e.relative_schema_path)[:-1])
         })
 
         try:
             raise e
         except ValidationError as exc:
             out['type'] = 'validation'
+            out['path'] = e.path and format_path("instance", e.path),
         except SchemaError as exc:
             out['type'] = 'schema'
         except RefResolutionError as exc:
