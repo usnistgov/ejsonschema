@@ -1,0 +1,2 @@
+include schemas/*-schema.json
+include schemas/schemaLocation.*
