@@ -2,8 +2,7 @@
 a module that provides support for loading schemas, particularly those 
 cached on local disk.  
 """
-from __future__ import with_statement
-import sys, os, json, errno
+import sys, os, json, errno, warnings
 from collections.abc import Mapping
 from urllib.parse import urlparse
 from urllib.request import urlopen
@@ -322,8 +321,18 @@ class DirectorySchemaCache(object):
         
         try:
             sid = schema["$schema"]
-            if sid not in jsch.validators.meta_schemas:
-                raise self.NotASchemaError("Unrecognized JSON-Schema $schema")
+            
+            # For jsonschema versions <~ 4.18, accessing validators.meta_schemas raises
+            # a warning, advising use of validators.validator_for() instead.  That
+            # function defaults to the DefaultValidator, with a warning that in the
+            # future it will raise an exception; until that time, we continue to consult
+            # meta_schemas and suppress the original warning and preserve original
+            # behavior
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", message='.*jsonschema.validators.meta_schemas',
+                                        category=DeprecationWarning)
+                if sid not in jsch.validators.meta_schemas:
+                    raise self.NotASchemaError("Unrecognized JSON-Schema $schema")
         except KeyError:
             raise self.NotASchemaError("JSON object does not contain a $schema property")
 
