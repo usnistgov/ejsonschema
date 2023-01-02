@@ -1,11 +1,6 @@
 # import pytest
 import json, os, sys, pytest, shutil, argparse
-try:
-    # python 2
-    from cStringIO import StringIO
-except ImportError:
-    # python 3
-    from io import StringIO
+from io import StringIO
 
 import ejsonschema.cli.validate as cli
 

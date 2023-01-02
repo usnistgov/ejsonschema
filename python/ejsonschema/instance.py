@@ -5,12 +5,8 @@ extended JSON schemas
 from __future__ import with_statement
 
 import os, json, jsonspec.pointer
-try:
-    from urllib.parse import urlparse
-    from urllib.request import urlopen
-except ImportError:
-    from urlparse import urlparse
-    from urllib2 import urlopen
+from urllib.parse import urlparse
+from urllib.request import urlopen
 
 EXTSCHEMAS = "extensionSchemas"
 DEF_EXTSCHEMAS = "$"+EXTSCHEMAS

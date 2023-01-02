@@ -3,15 +3,10 @@ a module that provides support for loading schemas, particularly those
 cached on local disk.  
 """
 from __future__ import with_statement
-import six
 import sys, os, json, errno
-from collections import Mapping
-try:
-    from urllib.parse import urlparse
-    from urllib.request import urlopen
-except ImportError:
-    from urlparse import urlparse
-    from urllib2 import urlopen
+from collections.abc import Mapping
+from urllib.parse import urlparse
+from urllib.request import urlopen
 
 import jsonschema as jsch
 
@@ -150,7 +145,7 @@ class SchemaLoader(BaseSchemaLoad):
         """
         return an iterator for the uris mapped in this instance
         """
-        return six.iterkeys(self._map)
+        return self._map.keys()
 
     def __len__(self):
         return len(self._map)

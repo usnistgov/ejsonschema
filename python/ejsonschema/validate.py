@@ -4,13 +4,9 @@ extended json-schema tags.
 """
 from __future__ import with_statement
 import sys, os, json
-from collections import Mapping
-try:
-    # python 3
-    import urllib.parse as urlparse
-    from builtins import str as unicode
-except ImportError:
-    import urlparse
+from collections.abc import Mapping
+import urllib.parse as urlparse
+from builtins import str as unicode
 
 import jsonschema
 import jsonschema.validators as jsch
@@ -161,7 +157,7 @@ class ExtValidator(object):
                         continue
                 
                 for val in extensions[ptr][extschemas]:
-                    if not isinstance(val, (str, unicode)):
+                    if not isinstance(val, str):
                         ex = ValidationError(
                                 "invalid {0} array item type:\n    {1}"
                                 .format(extschemas, val),
@@ -195,7 +191,7 @@ class ExtValidator(object):
                       otherwise, an empty list if the instance is valid against
                       all schemas.
         """
-        if isinstance(schemauris, (str, unicode)):
+        if isinstance(schemauris, str):
             schemauris = [ schemauris ]
         schema = None
         out = []

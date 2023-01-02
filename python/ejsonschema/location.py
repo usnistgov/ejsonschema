@@ -5,10 +5,7 @@ local disk.
 """
 from __future__ import with_statement
 import sys, os, json
-try:
-    from urllib.parse import urlparse
-except ImportError:
-    from urlparse import urlparse
+from urllib.parse import urlparse
 
 def parse_mappings_asjson(fd):
     """

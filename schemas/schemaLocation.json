@@ -2,12 +2,12 @@
     "https://data.nist.gov/od/dm/json-extension-schemas/v0.2":
         "https://data.nist.gov/od/dm/json-extension-schemas/v0.2",
     "https://data.nist.gov/od/dm/json-extension-schemas/v0.2/draft04":
-        "json-extension-schemas-draft04-schema.json"
+        "json-extension-schemas-draft04-schema.json",
     "https://data.nist.gov/od/dm/enhanced-doc-schema/v0.2": "enhanced-doc-schema.json",
 
     "http://json-schema.org/draft-04/schema#": "json-schema-draft04.json",
     "https://data.nist.gov/od/dm/enhanced-json-schema/v0.1#":
-        "enhanced-json-schema.json",
+        "enhanced-json-schema-v0.1.json",
     "https://www.nist.gov/od/dm/enhanced-json-schema/v0.1#":
-        "enhanced-json-schema.json"
+        "enhanced-json-schema-v0.1.json"
 }
