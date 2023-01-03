@@ -1,0 +1,63 @@
+{
+    "@schema": "http://github.com/usnistgov/ejsoncschema/tree/id/draft4/families/v1.0",
+    "@extensionSchemas": [ "http://github.com/usnistgov/ejsoncschema/tree/id/draft4/families/pets/v1.0#/definitions/PetOwningFamily" ],
+    "name": "Jetson",
+    "homeTown": "Orbit City",
+    "veternarian": "Dr. Bots",
+    "baseMember": "George Jetson",
+    "members": [
+        {
+            "@extensionSchemas": [
+                "http://github.com/usnistgov/ejsoncschema/tree/id/draft4/families/v1.0#/definitions/NuclearFamilyMember"
+            ],
+            "name": "George Jetson",
+            "nickname": "George",
+            "relationship": "self"
+        },
+        {
+            "@extensionSchemas": [
+                "http://github.com/usnistgov/ejsoncschema/tree/id/draft4/families/v1.0#/definitions/NuclearFamilyMember"
+            ],
+            "name": "Jane Jetson",
+            "nickname": "Jane",
+            "relationship": "wife"
+        },
+        {
+            "@extensionSchemas": [
+                "http://github.com/usnistgov/ejsoncschema/tree/id/draft4/families/v1.0#/definitions/NuclearFamilyMember"
+            ],
+            "name": "Judy Jetson",
+            "nickname": "JJ",
+            "relationship": "daughter"
+        },
+        {
+            "@extensionSchemas": [
+                "http://github.com/usnistgov/ejsoncschema/tree/id/draft4/families/v1.0#/definitions/NuclearFamilyMember"
+            ],
+            "name": "Judy Jetson",
+            "nickname": "JJ",
+            "relationship": "daughter"
+        },
+        {
+            "@extensionSchemas": [
+                "http://github.com/usnistgov/ejsoncschema/tree/id/draft4/families/v1.0#/definitions/NuclearFamilyMember"
+            ],
+            "name": "Elroy Jetson",
+            "nickname": "Elroy",
+            "relationship": "son"
+        },
+        {
+            "name": "Rosey",
+            "relationship": "robot maid"
+        },
+        {
+            "@extensionSchemas": [
+                "http://github.com/usnistgov/ejsoncschema/tree/id/draft4/families/pets/v1.0#/definitions/Pet"
+            ],
+            "name": "Astro",
+            "relationship": "pet",
+            "type": "dog",
+            "breed": "space mutt"
+        }
+    ]
+}

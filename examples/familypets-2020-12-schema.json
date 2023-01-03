@@ -1,0 +1,46 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "@extensionSchemas": ["https://www.nist.gov/od/dm/enhanced-json-schema/v0.1"],
+    "$id": "https://github.com/usnistgov/ejsoncschema/tree/id/2020-12/families/pets/v1.0",
+    "title": "Resource metadata type library",
+    "description": "a library of schemas for describing resources in a data federation",
+
+    "$defs": {
+        "Pet": {
+            "allOf": [
+                { "$ref": "https://github.com/usnistgov/ejsoncschema/tree/id/2020-12/families/v1.0#/$defs/FamilyMember" },
+                {
+                    "properties": {
+                        "type": {
+                            "type": "string",
+                            "description": "the species or category of pet",
+                            "notes": [
+                                "Examples can be 'dog', 'cat', 'gerbil', 'rock', etc."
+                            ]
+                        },
+                        "breed": {
+                            "type": "string",
+                            "description": "the name for the genetic lineage of the pet"
+                        }
+                    },
+                    "required": [ "type" ]
+                }
+            ]
+        },
+        
+        "PetOwningFamily": {
+            "allOf": [
+                { "$ref": "https://github.com/usnistgov/ejsoncschema/tree/id/2020-12/families/v1.0#/$defs/Family" },
+                {
+                    "properties": {
+                        "veterinarian": {
+                            "type": "string",
+                            "description": "name or telephone number of the veternarian for the family pets"
+                        }
+                    }
+                }
+            ]
+        }
+    },
+    "$ref": "#/$defs/PetOwningFamily"
+}

@@ -1,0 +1,151 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "$extensionSchemas": ["https://www.nist.gov/od/dm/enhanced-json-schema/v0.1#"],
+    "id": "http://github.com/usnistgov/ejsoncschema/tree/id/draft4/families/v1.0",
+    "title": "A schema for describing a family and its members",
+    "description": "a library of schemas for describing resources in a data federation",
+    "notes": [
+        "This schema is equivalent to the MGI res-md.xsd",
+        "This is based on VOResource v1.0"
+    ],
+    "definitions": {
+        "Family": {
+            "description": "a description of a family and its members",
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "a name for the family"
+                },
+                "homeTown": {
+                    "type": "string",
+                    "description": "the name of the town where the family resides"
+                },
+                "baseMember": {
+                    "type": "string",
+                    "description": "the name of the family member that relationships are relative to"
+                },
+                "members": {
+                    "type": "array",
+                    "description": "descriptions of the members of the family",
+                    "items": { 
+                        "$ref": "#/definitions/FamilyMember"
+                    }
+                }
+            },
+            "required": [ "name", "baseMember" ]
+        },
+
+        "FamilyMember": {
+            "description": "a description of a member of the family",
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "a name for the member",
+                    "notes": [
+                        "This is usually a fullname for the family member, if applicable",
+                        "This name should be unique in the list",
+                        "It is not assumed that the member's family name is the same as the family name"
+                    ]
+                },
+                "nickname": {
+                    "type": "string",
+                    "description": "a familiar name that the member is usually refered to as in polite company"
+                },
+                "relationship": {
+                    "type": "string",
+                    "description": "the familial relationship of the member to the base member",
+                    "notes": [
+                        "Although values are not controlled, certain values have a recognized meaning: father, mother, sister, daughter, brother, son, grandfather, grandmother, aunt, uncle, cousin, and pet",
+                        "If the member matches the baseMember, this should be set to 'self'",
+                        "FamilyMember subtypes may restrict the allowed values"
+                    ]
+                },
+                "age": {
+                    "type": "integer",
+                    "description": "the number of years the member has been alive"
+                }
+            }
+        },
+
+        "NuclearFamilyMember": {
+            "description": "an immediate family member",
+            "allOf": [
+                { "$ref": "#/definitions/FamilyMember" },
+                {
+                    "properties": { 
+                        "relationship": {
+                            "enum": [ "self", "spouse", "husband", "wife",
+                                      "father", "mother", "parent",
+                                      "sister", "brother", "sibling",
+                                      "daughter", "son", "child" ],
+                            "valueDocumentation": {
+                                "self": { "description": "the member matching the family base member" },
+                                "spouse": { "description": "non-gendered marital partner" },
+                                "husband": { "description": "male spouse" },
+                                "wife": { "description": "female spouse" },
+                                "parent": { "description": "non-gendered parent" },
+                                "father": { "description": "male parent" },
+                                "mother": { "description": "female parent" },
+                                "sibling": { "description": "non-gendered sibling" },
+                                "brother": { "description": "male sibling" },
+                                "sister": { "description": "female sibling" },
+                                "child": { "description": "non-gendered child" },
+                                "son": { "description": "male child" },
+                                "daughter": { "description": "female child" }
+                            }
+                        }
+                    },
+                    "required": [ "relationship" ]
+                }
+            ]
+        },
+
+        "Student": {
+            "description": "a family member that is also a student",
+            "allOf": [
+                { "$ref": "#/definitions/FamilyMember" },
+                {
+                    "properties": {
+                        "school": {
+                            "description": "the institute where the family member is enrolled",
+                            "type": "string"
+                        },
+                        "level": {
+                            "description": "the stage of education in some lifetime system",
+                            "notes": [
+                                "Values are uncontrolled but there are some with recognized semantics"
+                            ],
+                            "valueDocumentation": {
+                                "preschool": { "description": "pre-literate education typically for toddlers, 3-5 years" },
+                                "elementary school": { "description": "the initial literate education stage typical in the US beginning with kindergarten (age 5 or 6)" },
+                                "middle school": { "description": "the intermediate, pre-high school stage, typical in the US" },
+                                "high school": { "description": "the final high school years leading to a diploma, typical in the US" },
+                                "college":  { "description": "secondary education leading to an associate's or bachelor's degree" },
+                                "post-graduate": {
+                                    "description": "university education leading to a post-graduate degree (e.g. masters or doctorate"
+                                },
+                                "training": {
+                                    "description": "pre-professional, non-degree-seeking training"
+                                },
+                                "continuing": {
+                                    "description": "any ongoing non-degree-seeking education, typically post-high school"
+                                }
+                            }
+                        },
+                        "year": {
+                            "description": "the name of the nominal year of education",
+                            "notes": [
+                                "Examples include: '3rd grade', 'freshman', '2nd year'"
+                            ]
+                        }
+                    }
+                }
+            ]
+        }
+    },
+
+    "$ref": "#/definitions/Family"
+}
+
