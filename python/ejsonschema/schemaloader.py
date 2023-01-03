@@ -332,11 +332,15 @@ class DirectorySchemaCache(object):
                 warnings.filterwarnings("ignore", message='.*jsonschema.validators.meta_schemas',
                                         category=DeprecationWarning)
                 if sid not in jsch.validators.meta_schemas:
-                    raise self.NotASchemaError("Unrecognized JSON-Schema $schema")
+                    raise self.NotASchemaError("Unrecognized JSON-Schema $schema: "+sid)
         except KeyError:
             raise self.NotASchemaError("JSON object does not contain a $schema property")
 
-        return (schema.get("id"), schema)
+        idprop = "$id"
+        if idprop not in schema:
+            idprop = "id"
+
+        return (schema.get(idprop), schema)
 
     def open_file(self, filename):
         """

@@ -43,7 +43,7 @@ class ExtValidator(object):
     validator to look for properties '_schema' and '_extendedSchemas'
     """
 
-    def __init__(self, schemaLoader=None, ejsprefix='$', logger=None):
+    def __init__(self, schemaLoader=None, ejsprefix='@', logger=None):
         """
         initialize the validator for a set of expected schemas
 
@@ -51,7 +51,7 @@ class ExtValidator(object):
                                 finding schemas to use during the validation
         :param ejsprefix str:  a prefix to expect to precede special properties 
                                used in the validation process (namely *schema
-                               and *extendedSchemas); the default is '$'.
+                               and *extendedSchemas); the default is '@'.
         :param logger logging.Logger:  if provided, messages about otherwise 
                                silent activities will reported through this logger
         """
@@ -61,11 +61,13 @@ class ExtValidator(object):
         self._handler = loader.SchemaHandler(schemaLoader)
         self._schemaStore = {}
         self._validators = {}
+        if ejsprefix is None:
+            ejsprefix = '@'
         self._epfx = ejsprefix
         self._logger = logger
 
     @classmethod
-    def with_schema_dir(self, dirpath, ejsprefix='$', logger=None):
+    def with_schema_dir(self, dirpath, ejsprefix=None, logger=None):
         """
         Create an ExtValidator that leverages schema cached as files in a 
         directory.  
@@ -267,7 +269,7 @@ class ExtValidator(object):
                instance.get('id') in EXTSCHEMA_URIS and \
                self._epfx+EXTSCHEMAS in instance
 
-def SchemaValidator():
+def SchemaValidator(ejsprefix=None):
     """
     Create a validator is configured to validate Enhanced JSON Schema 
     schema documents.
@@ -275,7 +277,7 @@ def SchemaValidator():
     This simply returns an ExtValidator that has Enhanced JSON Schema schema 
     files pre-cached.  
     """
-    return ExtValidator(loader.schemaLoader_for_schemas())
+    return ExtValidator(loader.schemaLoader_for_schemas(), ejsprefix=ejsprefix)
 
 class MissingSchemaDocument(RefResolutionError):
     """

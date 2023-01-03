@@ -50,7 +50,7 @@ def define_opts(progname=None):
                         help="load schemas needed to validate EJS schema  "
                             +"documents (can be overridden by -L).")
     parser.add_argument('-M', '--mongodb-safe', action='store_const',
-                        dest="epfx", const='_', default='$', 
+                        dest="epfx", const='_', default='@', 
                         help="use a MongoDB-safe convention for special "
                             +"validation properties, starting them with _ "
                             +"instead of a $")

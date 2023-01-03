@@ -16,7 +16,7 @@ ipr_ex = os.path.join(exdir, "ipr.json")
 
 @pytest.fixture(scope="module")
 def validator(request):
-    return val.ExtValidator.with_schema_dir(exdir)
+    return val.ExtValidator.with_schema_dir(exdir, ejsprefix='$')
 
 def test_ipr(validator):
     # borrowed from test_examples.py, this test exercises most of the features
@@ -37,14 +37,14 @@ def test_extschema():
     #   * extension schema validation
     #   * initiating validation on a filename
     # 
-    validator = val.ExtValidator.with_schema_dir(schemadir)
+    validator = val.ExtValidator.with_schema_dir(schemadir, ejsprefix='$')
     validator.validate_file(enh_json_schema, False, True)
 
 def test_extschema2():
     # This test is equivalent to test_extschema() except that it uses
     # SchemaValidator to create the validater
     # 
-    validator = val.SchemaValidator()
+    validator = val.SchemaValidator(ejsprefix='$')
     validator.validate_file(enh_json_schema, False, True)
 
 class TestExtValidator(object):
@@ -58,7 +58,7 @@ class TestExtValidator(object):
 
     def test_usesloader(self):
         # ...by testing lack of loader
-        validator = val.ExtValidator()
+        validator = val.ExtValidator(ejsprefix='$')
         with pytest.raises(val.RefResolutionError):
             validator.validate_file(enh_json_schema, False, True)
 
@@ -66,7 +66,7 @@ class TestExtValidator(object):
         with open(enh_json_schema) as fd:
             enh = json.load(fd)
 
-        validator = val.ExtValidator()
+        validator = val.ExtValidator(ejsprefix='$')
         validator._schemaStore[enh['id']] = enh
 
         with pytest.raises(val.RefResolutionError):
@@ -92,7 +92,7 @@ class TestExtValidator(object):
 
 
     def test_invalidextension(self):
-        validator = val.ExtValidator.with_schema_dir(schemadir)
+        validator = val.ExtValidator.with_schema_dir(schemadir, ejsprefix='$')
         probfile = os.path.join(datadir, "invalidextension.json")
 
         # this should work
@@ -137,7 +137,7 @@ class TestExtValidator(object):
         assert len(errs) == 0
 
 def test_exc2json():
-    validator = val.ExtValidator.with_schema_dir(schemadir)
+    validator = val.ExtValidator.with_schema_dir(schemadir, ejsprefix='$')
     probfile = os.path.join(datadir, "invalidextension.json")
 
     errs = validator.validate_file(probfile, False, True, False)

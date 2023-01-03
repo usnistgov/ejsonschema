@@ -16,7 +16,7 @@ enh_json_schema = os.path.join(schemadir, "enhanced-json-schema-v0.1.json")
 
 @pytest.fixture(scope="module")
 def validator(request):
-    return val.ExtValidator.with_schema_dir(schemadir)
+    return val.ExtValidator.with_schema_dir(schemadir, ejsprefix='$')
 
 schemashell = {
     "$schema": "http://json-schema.org/draft-04/schema#",
@@ -146,7 +146,7 @@ def test_PropDocumentationType(validator):
     
 def test_topdoc():
     schema = schemashell.copy();
-    validator = val.ExtValidator.with_schema_dir(schemadir)
+    validator = val.ExtValidator.with_schema_dir(schemadir, ejsprefix='$')
 
     schema['notes'] = [ "yes", "no" ]
     validator.validate(schema, strict=True)
@@ -156,7 +156,7 @@ def test_topdoc():
     
 def test_definitiondoc():
     schema = schemashell.copy();
-    validator = val.ExtValidator.with_schema_dir(schemadir)
+    validator = val.ExtValidator.with_schema_dir(schemadir, ejsprefix='$')
 
     schema['definitions'] = {
         "Name": {
@@ -183,7 +183,7 @@ def test_definitiondoc():
     
 def test_propdoc():
     schema = schemashell.copy();
-    validator = val.ExtValidator.with_schema_dir(schemadir)
+    validator = val.ExtValidator.with_schema_dir(schemadir, ejsprefix='$')
 
     schema['type'] = "object"
     schema['properties'] = {
@@ -216,7 +216,7 @@ def test_propdoc():
     
 def test_addpropdoc():
     schema = schemashell.copy();
-    validator = val.ExtValidator.with_schema_dir(schemadir)
+    validator = val.ExtValidator.with_schema_dir(schemadir, ejsprefix='$')
 
     schema['type'] = "object"
     schema['additionalProperties'] = {
@@ -246,7 +246,7 @@ def test_addpropdoc():
     
 def test_patpropdoc():
     schema = schemashell.copy();
-    validator = val.ExtValidator.with_schema_dir(schemadir)
+    validator = val.ExtValidator.with_schema_dir(schemadir, ejsprefix='$')
 
     schema['type'] = "object"
     schema['patternProperties'] = {
@@ -280,7 +280,7 @@ def test_patpropdoc():
     
 def test_depdoc():
     schema = schemashell.copy();
-    validator = val.ExtValidator.with_schema_dir(schemadir)
+    validator = val.ExtValidator.with_schema_dir(schemadir, ejsprefix='$')
 
     schema['type'] = "object"
     schema['properties'] = {
@@ -335,7 +335,7 @@ def test_depdoc():
     
 def test_allofdoc():
     schema = schemashell.copy();
-    validator = val.ExtValidator.with_schema_dir(schemadir)
+    validator = val.ExtValidator.with_schema_dir(schemadir, ejsprefix='$')
 
     schema["allOf"] = [
         {
@@ -380,7 +380,7 @@ def test_allofdoc():
     
 def test_anyofdoc():
     schema = schemashell.copy();
-    validator = val.ExtValidator.with_schema_dir(schemadir)
+    validator = val.ExtValidator.with_schema_dir(schemadir, ejsprefix='$')
 
     schema["anyOf"] = [
         {
@@ -427,7 +427,7 @@ def test_anyofdoc():
     
 def test_oneofdoc():
     schema = schemashell.copy();
-    validator = val.ExtValidator.with_schema_dir(schemadir)
+    validator = val.ExtValidator.with_schema_dir(schemadir, ejsprefix='$')
 
     schema["oneOf"] = [
         {
@@ -474,7 +474,7 @@ def test_oneofdoc():
     
 def test_notdoc():
     schema = schemashell.copy();
-    validator = val.ExtValidator.with_schema_dir(schemadir)
+    validator = val.ExtValidator.with_schema_dir(schemadir, ejsprefix='$')
 
     schema["not"] = {
         "type": "integer",
