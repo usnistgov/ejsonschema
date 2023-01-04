@@ -124,6 +124,9 @@ class ExtValidator(object):
         baseSchema = schemauri
         if not baseSchema:
             baseSchema = instance.get(schematag)
+        if not baseSchema and self._epfx != '$':
+            # instance may be a legit schema file
+            baseSchema = instance.get('$'+SCHEMATAG)
         if not baseSchema:
             raise ValidationError("Base schema ("+schematag+") not specified; " +
                                   "unable to validate")
@@ -269,7 +272,7 @@ class ExtValidator(object):
                instance.get('id') in EXTSCHEMA_URIS and \
                self._epfx+EXTSCHEMAS in instance
 
-def SchemaValidator(ejsprefix=None):
+def SchemaValidator(_ejsprefix='$'):
     """
     Create a validator is configured to validate Enhanced JSON Schema 
     schema documents.
@@ -277,7 +280,7 @@ def SchemaValidator(ejsprefix=None):
     This simply returns an ExtValidator that has Enhanced JSON Schema schema 
     files pre-cached.  
     """
-    return ExtValidator(loader.schemaLoader_for_schemas(), ejsprefix=ejsprefix)
+    return ExtValidator(loader.schemaLoader_for_schemas(), ejsprefix=_ejsprefix)
 
 class MissingSchemaDocument(RefResolutionError):
     """

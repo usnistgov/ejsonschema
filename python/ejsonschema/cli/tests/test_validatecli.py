@@ -76,7 +76,7 @@ def test_simple_invalid(tstsys):
 
     baddoc = os.path.join(datadir, "invalidextension.json")
     app = cli.Validate("goob", tstsys.stdout, tstsys.stderr)
-    tstsys.argv[1:] = "-L {0} {1}".format(schemadir, baddoc).split()
+    tstsys.argv[1:] = "-L {0} --val-prop-prefix $ {1}".format(schemadir, baddoc).split()
     exit = app.execute()
 
     assert "3 is not of type" in tstsys.stderr.getvalue()
@@ -98,7 +98,7 @@ def test_ignore_ext(tstsys):
 
     baddoc = os.path.join(datadir, "invalidextension.json")
     app = cli.Validate("goob", tstsys.stdout, tstsys.stderr)
-    tstsys.argv[1:] = "-L {0} -g {1}".format(schemadir, baddoc).split()
+    tstsys.argv[1:] = "-L {0} -g --val-prop-prefix $ {1}".format(schemadir, baddoc).split()
     exit = app.execute()
 
     assert ": valid!" in tstsys.stdout.getvalue()
@@ -108,7 +108,7 @@ def test_ignore_ext(tstsys):
 def test_strict(tstsys):
 
     app = cli.Validate("goob", tstsys.stdout, tstsys.stderr)
-    tstsys.argv[1:] = "-L {0} {1}".format(exdir, ipr_ex).split()
+    tstsys.argv[1:] = "-L {0} --val-prop-prefix $ {1}".format(exdir, ipr_ex).split()
     exit = app.execute()
 
     assert ": valid!" in tstsys.stdout.getvalue()
@@ -119,7 +119,7 @@ def test_strict(tstsys):
     tstsys.stderr = StringIO()
 
     app = cli.Validate("goob", tstsys.stdout, tstsys.stderr)
-    tstsys.argv[1:] = "-L {0} -C {1}".format(exdir, ipr_ex).split()
+    tstsys.argv[1:] = "-L {0} -C --val-prop-prefix $ {1}".format(exdir, ipr_ex).split()
     exit = app.execute()
 
     assert "Unable to find schema document" in tstsys.stderr.getvalue()
@@ -129,7 +129,7 @@ def test_strict(tstsys):
 def test_schema_override(tstsys):
 
     app = cli.Validate("goob", tstsys.stdout, tstsys.stderr)
-    tstsys.argv[1:] = "-L {0} -S urn:gurn {1}".format(exdir, ipr_ex).split()
+    tstsys.argv[1:] = "-L {0} -S urn:gurn --val-prop-prefix $ {1}".format(exdir, ipr_ex).split()
     exit = app.execute()
 
     assert "Unable to find schema document" in tstsys.stderr.getvalue()

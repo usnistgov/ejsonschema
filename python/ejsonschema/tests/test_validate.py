@@ -37,14 +37,14 @@ def test_extschema():
     #   * extension schema validation
     #   * initiating validation on a filename
     # 
-    validator = val.ExtValidator.with_schema_dir(schemadir, ejsprefix='$')
+    validator = val.ExtValidator.with_schema_dir(schemadir)
     validator.validate_file(enh_json_schema, False, True)
 
 def test_extschema2():
     # This test is equivalent to test_extschema() except that it uses
     # SchemaValidator to create the validater
     # 
-    validator = val.SchemaValidator(ejsprefix='$')
+    validator = val.SchemaValidator()
     validator.validate_file(enh_json_schema, False, True)
 
 class TestExtValidator(object):
@@ -58,7 +58,7 @@ class TestExtValidator(object):
 
     def test_usesloader(self):
         # ...by testing lack of loader
-        validator = val.ExtValidator(ejsprefix='$')
+        validator = val.ExtValidator()
         with pytest.raises(val.RefResolutionError):
             validator.validate_file(enh_json_schema, False, True)
 
