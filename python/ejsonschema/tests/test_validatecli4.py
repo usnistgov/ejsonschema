@@ -4,8 +4,8 @@ from io import StringIO
 
 import ejsonschema.cli.validate as cli
 
-from ...tests.config import schema_dir as schemadir, data_dir as datadir, \
-                            examples_dir as exdir
+from .config import schema_dir as schemadir, data_dir as datadir, examples_dir as exdir
+
 enh_json_schema = os.path.join(schemadir, "enhanced-json-schema-v0.1.json")
 ipr_ex = os.path.join(exdir, "ipr.json")
 
