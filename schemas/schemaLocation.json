@@ -9,5 +9,10 @@
     "https://data.nist.gov/od/dm/enhanced-json-schema/v0.1#":
         "enhanced-json-schema-v0.1.json",
     "https://www.nist.gov/od/dm/enhanced-json-schema/v0.1#":
-        "enhanced-json-schema-v0.1.json"
+        "enhanced-json-schema-v0.1.json",
+
+    "https://json-schema.org/draft/2020-12/meta/applicator": "json-schema.org/applicator-vocab-2020.json",
+    "https://json-schema.org/draft/2020-12/schema": "json-schema.org/json-schema-2020.json",
+    "https://json-schema.org/draft/2020-12/meta/meta-data": "json-schema.org/meta-data-vocab-2020.json",
+    "https://json-schema.org/draft/2020-12/meta/validation": "json-schema.org/validation-vocab-2020.json"
 }

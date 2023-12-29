@@ -1,5 +1,5 @@
 {
-    "$schema": "http://json-schema.org/draft/2020-12/schema",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
     "@extensionSchemas": [ "https://data.nist.gov/od/dm/enhanced-doc-schema/v0.2" ],
     "$id": "https://data.nist.gov/od/dm/enhanced-doc-schema/v0.2",
     "$vocabulary": {
@@ -38,7 +38,7 @@
                     ]
                 },
                 "notes": {
-                    "$ref": "#/definitions/Notes",
+                    "$ref": "#/$defs/Notes",
                     "description": "additional information and advice on the use of the thing being defined"
                 },
                 "equivalentTo": {
@@ -52,13 +52,13 @@
         "StringPropertyDocumentation": {
             "description": "documentation specifically for an object property",
             "allOf": [
-                { "$ref": "#/definitions/Documentation" },
+                { "$ref": "#/$defs/Documentation" },
                 {
                     "properties": { 
                         "valueDocumentation": {
                             "type": "object",
                             "additionalProperties": {
-                                "$ref": "#/definitions/Documentation"
+                                "$ref": "#/$defs/Documentation"
                             },
                             "description": "definitions of recognized string values for the property being defined",
                             "notes": [
@@ -74,64 +74,19 @@
         "EnhancedSchemaArray": {
             "description": "an array of enhanced schema definitions",
             "allOf": [
-                { "$ref": "http://json-schema.org/draft/2020-12/meta/applicator#/$defs/schemaArray" },
+                { "$ref": "https://json-schema.org/draft/2020-12/meta/applicator#/$defs/schemaArray" },
                 {
-                    "items": { "$ref": "#/$defs/EnhancedSchema" }
+                    "items": { "$dynamicRef": "#meta" }
                 }
             ]
         },
 
         "EnhancedSchema": {
             "description": "JSON schema description with enhancements for documentation",
+            "$dynamicAnchor": "meta",
             "allOf": [
-                { "$ref": "http://json-schema.org/draft/2020-12/schema" },
-                { "$ref": "#/$defs/StringPropertyDocumentation" },
-                {
-                    "properties": {
-                        "$defs": {
-                            "additionalProperties": {
-                                "$ref": "#/$defs/EnhancedSchema"
-                            }
-                        },
-
-                        "properties": {
-                            "additionalProperties": {
-                                "$ref": "#/$defs/EnhancedSchema"
-                            }
-                        },
-
-                        "patternProperties": {
-                            "additionalProperties": {
-                                "$ref": "#/$defs/EnhancedSchema"
-                            }
-                        },
-
-                        "additionalProperties": {
-                            "anyOf": [
-                                { "type": "boolean" },
-                                { "$ref": "#/$defs/EnhancedSchema" }
-                            ]
-                        },
-
-                        "dependentSchemas": {
-                            "type": "object",
-                            "additionalProperties": { 
-                                "$ref": "#/$defs/EnhancedSchema" 
-                            }
-                        },
-
-                        "prefixItems": { "$ref": "#/$defs/EnhancedSchemaArray" },
-                        "items": { "$ref": "#/$defs/EnhancedSchema" },
-
-                        "if": { "$ref": "#/$defs/EnhancedSchema" },
-                        "then": { "$ref": "#/$defs/EnhancedSchema" },
-                        "else": { "$ref": "#/$defs/EnhancedSchema" },
-                        "allOf": { "$ref": "#/$defs/EnhancedSchemaArray" },
-                        "anyOf": { "$ref": "#/$defs/EnhancedSchemaArray" },
-                        "oneOf": { "$ref": "#/$defs/EnhancedSchemaArray" },
-                        "not": { "$ref": "#/$defs/EnhancedSchema" }
-                    }
-                }
+                { "$ref": "https://json-schema.org/draft/2020-12/schema" },
+                { "$ref": "#/$defs/StringPropertyDocumentation" }
             ]
         }
     },

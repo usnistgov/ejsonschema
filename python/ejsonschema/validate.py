@@ -101,6 +101,8 @@ class ExtValidator(object):
                                  be used.  
         """
         if not uri:
+            uri = schema.get('$id')
+        if not uri:
             uri = schema.get('id')
         if not uri:
             raise ValueError("No id property found; set uri param instead.")
@@ -264,15 +266,18 @@ class ExtValidator(object):
     def is_extschema_schema(self, instance):
         """
         return true if the given JSON instance is an object that has both an 
-        "id" property set to one of the recognized URIs for a version of the 
-        JSON Enhanced Schema (Supporting Extensions) _and_ an "$extensionSchema" 
+        "$id" property (or "id" for draft04 compatibility) set to one of the 
+        recognized URIs for a version of the JSON
+        JSON Enhanced Schema (Supporting Extensions) _and_ an "@extensionSchema" 
         property.
         """
-        return isinstance(instance, Mapping) and \
-               instance.get('id') in EXTSCHEMA_URIS and \
+        if not isinstance(instance, Mapping):
+            return False
+        schemaid = instance.get('$id') or instance.get('id')
+        return schemaid in EXTSCHEMA_URIS and \
                self._epfx+EXTSCHEMAS in instance
 
-def SchemaValidator(_ejsprefix='$'):
+def SchemaValidator(_ejsprefix=None):
     """
     Create a validator is configured to validate Enhanced JSON Schema 
     schema documents.

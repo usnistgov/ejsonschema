@@ -1,5 +1,5 @@
 {
-    "$schema": "http://json-schema.org/draft/2020-12/schema",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
     "@extensionSchemas": [
         "https://data.nist.gov/od/dm/json-extension-schemas/v0.2",
         "https://data.nist.gov/od/dm/enhanced-doc-schema/v0.2"
