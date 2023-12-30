@@ -9,7 +9,8 @@ from urllib.parse import urlparse
 from urllib.request import urlopen
 
 EXTSCHEMAS = "extensionSchemas"
-DEF_EXTSCHEMAS = "$"+EXTSCHEMAS
+DEF_EXTSCHEMAS = "@"+EXTSCHEMAS
+DRAFT04_EXTSCHEMAS = "$"+EXTSCHEMAS
 
 class Instance(object):
     """
@@ -44,7 +45,7 @@ class Instance(object):
         :argument str extschemastag:  the name of the property containing the
                                   the list of extension schema URIs that a
                                   JSON object is compliant with (default:
-                                  "$extensionSchemas")
+                                  "@extensionSchemas")
         """
         self.data = data
         self._srcid = srcid
@@ -176,12 +177,12 @@ class Instance(object):
     def find_extended_objs(self):
         """
         return a list of pointer-object tuples that containing the 
-        "$extensionSchemas" property.
+        "@extensionSchemas" property.
         
         This function is equivalent to 
-        self.find_obj_by_prop("$extensionSchemas").  That is, it returns all
+        self.find_obj_by_prop("@extensionSchemas").  That is, it returns all
         objects (including the root object, if applicable) that contains 
-        the "$exensionSchemas" property.  
+        the "@exensionSchemas" property.  
         """
         return self.find_obj_by_prop(self._exttag)
 

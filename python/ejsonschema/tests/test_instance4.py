@@ -6,8 +6,10 @@ from io import StringIO
 import ejsonschema.instance as instance
 
 from .config import examples_dir as exdir
-exfile = os.path.join(exdir, "ipr-2020-12.json")
-assert os.path.exists(exfile), exfile + ": example file not found" 
+exfile = os.path.join(exdir, "ipr-draft4.json")
+assert os.path.exists(exfile), exfile + ": example file not found"
+
+OLD_EXTSCHEMAS = instance.DRAFT04_EXTSCHEMAS
 
 class TestInstance(object):
 
@@ -32,7 +34,7 @@ class TestInstance(object):
         assert "id" in inst.data
 
     def test_find_data_by_name(self):
-        inst = instance.Instance.from_location(exfile)
+        inst = instance.Instance.from_location(exfile, OLD_EXTSCHEMAS)
 
         found = inst.find_data_by_name("goober")
         assert len(found) == 0
@@ -45,23 +47,23 @@ class TestInstance(object):
         assert "metals" in found[0][1]
         assert len(found[0][1]) >= 5
 
-        found = inst.find_data_by_name(instance.DEF_EXTSCHEMAS)
+        found = inst.find_data_by_name(OLD_EXTSCHEMAS)
         assert len(found) == 2
         assert len(found[0]) == 2
 
         found = dict(found)
-        path = "/"+instance.DEF_EXTSCHEMAS
+        path = "/"+OLD_EXTSCHEMAS
         assert path in found
         assert isinstance(found[path], list)
         assert "ms:Database" in found[path]
         assert len(found[path]) == 1
-        path = "/applicability/0/"+instance.DEF_EXTSCHEMAS
+        path = "/applicability/0/"+OLD_EXTSCHEMAS
         assert isinstance(found[path], list)
         assert "ms:MaterialScience" in found[path]
         assert len(found[path]) == 1
 
     def test_find_obj_by_prop(self):
-        inst = instance.Instance.from_location(exfile)
+        inst = instance.Instance.from_location(exfile, OLD_EXTSCHEMAS)
 
         found = inst.find_obj_by_prop("goober")
         assert len(found) == 0
@@ -74,7 +76,7 @@ class TestInstance(object):
         assert "subject" in found[0][1]
         assert len(found[0][1]['subject']) >= 5
 
-        found = inst.find_obj_by_prop(instance.DEF_EXTSCHEMAS)
+        found = inst.find_obj_by_prop(OLD_EXTSCHEMAS)
         assert len(found) == 2
         assert len(found[0]) == 2
 
@@ -82,17 +84,17 @@ class TestInstance(object):
         path = "/"
         assert path in found
         assert isinstance(found[path], dict)
-        assert instance.DEF_EXTSCHEMAS in found[path]
-        assert len(found[path][instance.DEF_EXTSCHEMAS]) == 1
-        assert "ms:Database" in found[path][instance.DEF_EXTSCHEMAS]
+        assert OLD_EXTSCHEMAS in found[path]
+        assert len(found[path][OLD_EXTSCHEMAS]) == 1
+        assert "ms:Database" in found[path][OLD_EXTSCHEMAS]
         path = "/applicability/0"
         assert isinstance(found[path], dict)
-        assert instance.DEF_EXTSCHEMAS in found[path]
-        assert "ms:MaterialScience" in found[path][instance.DEF_EXTSCHEMAS]
-        assert len(found[path][instance.DEF_EXTSCHEMAS]) == 1
+        assert OLD_EXTSCHEMAS in found[path]
+        assert "ms:MaterialScience" in found[path][OLD_EXTSCHEMAS]
+        assert len(found[path][OLD_EXTSCHEMAS]) == 1
 
     def test_find_extend_objs(self):
-        inst = instance.Instance.from_location(exfile)
+        inst = instance.Instance.from_location(exfile, OLD_EXTSCHEMAS)
 
         found = inst.find_extended_objs()
         found = dict(found)
@@ -100,14 +102,14 @@ class TestInstance(object):
         path = "/"
         assert path in found
         assert isinstance(found[path], dict)
-        assert instance.DEF_EXTSCHEMAS in found[path]
-        assert len(found[path][instance.DEF_EXTSCHEMAS]) == 1
-        assert "ms:Database" in found[path][instance.DEF_EXTSCHEMAS]
+        assert OLD_EXTSCHEMAS in found[path]
+        assert len(found[path][OLD_EXTSCHEMAS]) == 1
+        assert "ms:Database" in found[path][OLD_EXTSCHEMAS]
         path = "/applicability/0"
         assert isinstance(found[path], dict)
-        assert instance.DEF_EXTSCHEMAS in found[path]
-        assert "ms:MaterialScience" in found[path][instance.DEF_EXTSCHEMAS]
-        assert len(found[path][instance.DEF_EXTSCHEMAS]) == 1
+        assert OLD_EXTSCHEMAS in found[path]
+        assert "ms:MaterialScience" in found[path][OLD_EXTSCHEMAS]
+        assert len(found[path][OLD_EXTSCHEMAS]) == 1
 
     def test_extract(self):
         inst = instance.Instance.from_location(exfile)
