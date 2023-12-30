@@ -2,10 +2,14 @@
 a module that provides support for loading schemas, particularly those 
 cached on local disk.  
 """
-import sys, os, json, errno, warnings
+import sys, os, json, errno, warnings, abc
 from collections.abc import Mapping
 from urllib.parse import urlparse
 from urllib.request import urlopen
+from pathlib import Path
+from typing import Union, Iterator, Tuple
+from types import ModuleType
+from logging import Logger
 
 import jsonschema as jsch
 
@@ -16,8 +20,232 @@ try:
 except ImportError:
     requests = None
 
+# The files() API was added in Python 3.9.
+if sys.version_info >= (3, 9):  # pragma: no cover
+    from importlib import resources
+else:  # pragma: no cover
+    import importlib_resources as resources  # type: ignore
+
 SCHEMA_LOCATION_FILE = "schemaLocation.json"
 
+class JSONDataLoader(metaclass=abc.ABCMeta):
+    """
+    a function object that will load a JSON document from an internally configured source
+    """
+    def __init__(self, source):
+        """
+        initialize the loader.  
+        :param source:  an instance that represents the source of the data.  
+        """
+        self._src = source
+
+    @abc.abstractmethod
+    def load(self):
+        """
+        Read the JSON data from its source and return it.  
+
+        Implementation Notes: This method should always read the data afresh.  It is recommended that 
+        issues of source existance be tested at construction time when cheap and possible to do so.
+
+        :raises json.JSONDecodeError:  if the data cannot be loaded due to a JSON format error
+        :raises JSONDataNotAvailable:  if the schema cannot be loaded from its source for some other reason
+                                       (e.g. an IO error).
+        """
+        raise NotImplementedError()
+
+    def __call__(self):
+        """
+        load the JSON data (reading it as needed) and return it.  
+
+        An implementation may cache the data if appropriate.  This default implementation calls
+        :py:meth:`load` directly.
+        """
+        return self.load()
+
+    def __str__(self):
+        return str(self._src)
+
+class JSONDataNotAvailable(Exception):
+    """
+    an exception indicating that JSON data can not loaded from its source due to some error.
+    """
+
+    def __init__(self, source=None, message=None, cause=None, _what="JSON data"):
+        if not message:
+            message = f"Unable to load {_what}"
+            if source:
+                message += f" from {source}"
+            if cause:
+                message += f": {cause}"
+        super(JSONDataNotAvailable, self).__init__(message)
+        if cause:
+            self.__cause__ = cause
+
+class SchemaNotAvailable(JSONDataNotAvailable):
+    """
+    an exception indicating that a schema coudl not loaded from its source due to some error.
+    """
+
+    def __init__(self, source=None, message=None, cause=None):
+        super(SchemaNotAvailable, self).__init__(source, message, cause, "Schema")
+
+class NotASchema(SchemaNotAvailable):
+    """
+    a requested schema document could not be loaded because the document source does not contain a 
+    compliant schema.
+    """
+    def __init__(self, source=None, message=None, cause=None):
+        if not message:
+            message = "Requested document"
+            if source:
+                message += f", {source},"
+            message += " does not contain a JSON Schema."
+        super(SchemaNotAvailable, self).__init__(source, message, cause)
+
+class JSONResourceLoader(JSONDataLoader):
+    """
+    a :py:class:`JSONDataLoader` that reads the data from a package resource
+    """
+
+    def __init__(self, pkg: Union[ModuleType, str], respath: str, resdir: str=None):
+        """
+        Point a loader at a package resource
+        :param module|str pkg:  the package that contains the desired resource, given either 
+                                as a module instance or a dot-delimited module name.
+        :param str    respath:  the path to the desired resource file (relative to the value
+                                of `resdir`).
+        :param str     resdir:  the directory within the package that `respath` is relative to;
+                                if not given, `respath` is relative to the package.
+        :raises ImportError:  if `pkg` is a string but cannot be imported as a module.
+        :raises FileNotFoundError:  if the file does not exist as a resource in the specified package
+        """
+        src = importlib_resource.files(pkg)
+        if resdir:
+            src = self._src.joinpath(resdir)
+        src = src.joinpath(respath)
+        super(JSONResourceLoader, self).__init__(src)
+
+    def load(self):
+        """
+        Read the JSON data from its source and return it.
+        :raises NotASchema:  if the content of the source document is not found to be a legal JSON Schema
+        :raises SchemaNotAvailable:  if the schema cannot be loaded from its source for some other reason
+                                     (e.g. an IO error).
+        """
+        try:
+            return json.loads(self._src.read_text("utf-8"))
+        except IOError as ex:
+            raise JSONDataNotAvailable(str(self._src), cause=ex) from ex
+
+class JSONFileLoader(JSONDataLoader):
+    """
+    a :py:class:`JSONDataLoader` that reads the data from a normal file on disk
+    """
+
+    def __init__(self, fpath: Union[Path, str], basedir: Union[Path, str] = None):
+        """
+        Point a loader at a file on disk
+        :param Path|str   fpath:  the path to the file containing the desired JSON data
+        :param Path|str basedir:  the directory within the package that `fpath` is relative to.
+                                  If not given, `respath` is relative to the current directory.
+                                  If `fpath` is absolute, this parameter is ignored.
+        :raises FileNotFoundError:  if the path does not point to an existing file
+        """
+        src = Path(fpath) if not isinstance(fpath, Path) else fpath
+        if basedir:
+            if not isinstance(basedir, Path):
+                basedir = Path(basedir)
+            src = basedir / src
+        if src.exists() and not src.is_file():
+            raise FileNotFoundError(f"{str(src)} is not an existing file")
+        super(JSONFileLoader, self).__init__(src)
+
+    def load(self):
+        """
+        Read the JSON data from its source and return it.  This can raise any of the exception that 
+        might be raised by `json.load()`.  
+        """
+        try:
+            with open(self._src, encoding="utf-8") as fd:
+                return json.load(fd)
+        except IOError as ex:
+            raise JSONDataNotAvailable(str(self._src), cause=ex) from ex
+
+class WebJSONLoader(JSONDataLoader):
+    """
+    a :py:class:`JSONDataLoader` that reads the data from an HTTP/HTTPS URL
+    """
+
+    def __init__(self, url: str, contenttype: str=None, ensure=False):
+        """
+        Point a loader at a URL
+        :param str     url:  the full URL for the JSON file
+        :param str contenttype:  the content type to include in the Accept header of the request 
+                             used to retrieve the data.  If None, the Accept header will not be set.
+        :param bool ensure:  ensure that the URL resource exists as JSON by doing a 
+                             HEAD request and checking its content type.
+        :raises ValueError:  if the given `url` is not a compliant HTTP/HTTPS URL
+        :raises requests.RequestException:  if `ensure` was `True` and there was trouble accessing the URL
+        """
+        self.hdrs = {}
+        if contenttype:
+            self.hdrs['Accept'] = contenttype
+        src = url
+        url = urlparse(url)
+        if url.scheme != "https" and url.scheme != "http":
+            raise ValueError(f"{src}: not an HTTP(S) URL")
+
+        if ensure:
+            res = requests.head(src, headers=self.hdrs, allow_redirects=True)
+            if res.status_code >= 400:
+                res.raise_for_status()
+            ct = res.headers.get('content-type') 
+            if ct and 'json' not in ct:
+                raise ValueError(f"{src}: does not return JSON data")
+
+        super(WebJSONLoader, self).__init__(src)
+
+    def load(self):
+        """
+        Read JSON data from the remote resource
+        :raises requests.RequestException:  if there was a problem accessing the JSON data
+        """
+        try:
+            res = requests.get(self._src, headers=self.hdrs, allow_redirects=True)
+            res.raise_for_status()
+            return res.json()
+
+        except requests.RequestException as ex:
+            raise JSONDataNotAvailable(self._src, cause=ex) from ex
+
+def get_json_loader(url: str):
+    """
+    return an instance of a JSONDataLoader that can be called to load the schema referred to by `url`.
+    """
+    urlp = urlparse(url)
+
+    if not urlp.path or urlp.path == '/':
+        raise ValueError(f"{url}: Malformed url source format: no path given")
+
+    if urlp.scheme == 'resource':
+        # retrieve as a resource from a python package
+        pkg = urlp.netloc
+        pth = urlp.path.lstrip('/')
+        if not pkg:
+            parts = urlp.path.split('/', 1)
+            if len(parts) < 2:
+                raise ValueError(f"{url}: Malformed url source format: no path given")
+            pkg = parts[0]
+            pth = parts[1]
+        return JSONResourceLoader(pkg, pth)
+
+    if urlp.scheme == 'https' or urlp.scheme == 'http':
+        # retrieve from a URL over the web
+        return WebJSONLoader(url)
+
+    # default to local file
+    return JSONFileLoader(urlp.path)
+        
 _schema_schemaLoader = None
 def schemaLoader_for_schemas():
     global _schema_schemaLoader
@@ -35,7 +263,7 @@ def schemaLoader_for_schemas():
 
     return _schema_schemaLoader
 
-class BaseSchemaLoad(object):
+class BaseSchemaLoad(object, metaclass=abc.ABCMeta):
 
     def load_schema(self, uri):
         """
@@ -46,8 +274,7 @@ class BaseSchemaLoad(object):
                        registered location.  This includes if the file is
                        not found or reading causes a syntax error.  
         """
-        raise NotImplementedError("Programmer error: load_schema() "+
-                                  "not implemented")
+        raise NotImplementedError()
 
     def __call__(self, uri):
         """
@@ -83,14 +310,26 @@ class SchemaLoader(BaseSchemaLoad):
 
     @classmethod
     def from_directory(cls, dirpath, ensure_locfile=False, 
-                       locfile=SCHEMA_LOCATION_FILE, logger=None):
+                       locfile=SCHEMA_LOCATION_FILE, logger: Logger=None,
+                       recursive=True):
         """
         create a schemaLoader for schemas stored as files under a given 
         directory.  This factory method will attempt to load schema file 
-        names from a file called locfile (defaults to "schemaLocation.json").
+        names from a file called `locfile` (defaults to "schemaLocation.json").
         If the file is not found, all the JSON files under that directory
         (including subdirectories) will be examined and those recognized as 
         JSON schemas will be loaded.  
+        :param str    dirpath:  the directory to look for schemas (and 
+                                `locfile`) under.
+        :param bool ensure_locfile:  if True, and `locfile` is not found,
+                                attempt to write one with the schemas 
+                                subsequently discovered.
+        :param str    locfile:  the name of the schema location file to look for 
+                                (default: "schemaLocation.json").
+        :param str     logger:  a Logger write messages about which files are loaded 
+                                (and which are not and why).
+        :param bool recursive:  if True (default), search recursively into subdirectories
+                                for schemas; ignored if `locfile` is present.
         """
         if not os.path.exists(dirpath):
             raise IOError((errno.ENOENT, "directory not found", dirpath)) 
@@ -99,16 +338,64 @@ class SchemaLoader(BaseSchemaLoad):
 
         out = SchemaLoader()
 
-        locpath = os.path.join(dirpath, locfile)
-        if os.path.exists(locpath):
+        locpath = None
+        if locfile:
+            locpath = os.path.join(dirpath, locfile)
+        if locfile and os.path.exists(locpath):
             out.load_locations(locpath, dirpath)
         else:
             if logger:
                 logger = logger.getChild("dsc")
             dc = DirectorySchemaCache(dirpath, logger=logger)
-            out.add_locations(dc.locations())
+            for uri, loc in dc.discover(recursive):
+                out.add_location(uri, loc)
             if ensure_locfile:
                 dc.save_locations(locfile)
+
+        return out
+
+    @classmethod
+    def from_resource_cache(cls, pkg: Union[ModuleType, str], respath: str=None,
+                            glob: str='*', locfile=SCHEMA_LOCATION_FILE,
+                            logger: Logger=None, recursive: bool=True):
+        """
+        create a schemaLoader for schemas stored as resources of a python
+        package.  This factory method will attempt to load schema file 
+        names from a file called locfile (defaults to "schemaLocation.json").
+        If the file is not found, all the JSON files under that directory
+        (including subdirectories) will be examined and those recognized as 
+        JSON schemas will be loaded.  
+        :param module|str pkg:  the python package containing the schemas, given either 
+                                as a module instance or as a dot-delimited string.
+        :param str     resdir:  the resource directory relative to the package to look
+                                for schemas under
+        :param str       glob:  a file glob pattern (e.g. "*.json") to restrict the 
+                                search to files with names matching it
+        :param str    locfile:  the name of the schema location file to look for 
+                                (default: "schemaLocation.json").
+        :param str     logger:  a Logger write messages about which files are loaded 
+                                (and which are not and why).
+        :param bool recursive:  if True (default), search recursively into subdirectories
+                                for schemas; ignored if `locfile` is present.
+        :raises ImportError:  if `pkg` is a string but cannot be imported as a module.
+        """
+
+        # this ensures that the python package and directory exists:
+        cache = PackageResourceSchemaCache(pkg, resdir, glob, logger.getChild("prsc"))
+
+        locpath = None
+        if locfile:
+            locpath = cache.filepath(locfile)
+        if locpath and locpath.is_file():
+            dirroot = "resource:" + (pkg.__name__ if isinstance(pkg, Module) else pkg)
+            if resdir:
+                dirroot = "/".join([dirroot, resdir])
+            with importlib_resources.as_file(locpath) as schlocf:
+                out.load_locations(schlocf, dirroot)
+
+        else:
+            for uri, loc in cache.discover(recursive):
+                out.add_location(uri, loc)
 
         return out
 
@@ -133,12 +420,11 @@ class SchemaLoader(BaseSchemaLoad):
 
     def locate(self, uri):
         """
-        return the file path location of the schema for the given URI or None
-        if the schema is not known to be available locally.
+        return location of the schema for the given URI.
 
         :exc `KeyError` if the location of the schema has not been set
         """
-        return self._map[uri]
+        return str(self._map[uri])
 
     def iterURIs(self):
         """
@@ -149,28 +435,36 @@ class SchemaLoader(BaseSchemaLoad):
     def __len__(self):
         return len(self._map)
 
-    def add_location(self, uri, path):
+    def add_location(self, uri: str, loc: Union[str,Path,JSONDataLoader] = None):
         """
         set the location of the schema file corresponding to the given URI
+        :param str uri:  the schema identifier being loaded
+        :param str|Path|JSONDataLoader loc:  the location of the JSON Schema document for 
+                         the given identifier.  If not provided, the URI will be treated as 
+                         the URL location of the document.
         """
-        self._map[uri] = path
+        # strip off any trailing # from the id
+        uri = uri.rstrip('#')
+
+        if not loc:
+            loc = uri
+
+        if not isinstance(loc, JSONDataLoader):
+            if isinstance(loc, Path):
+                loc = JSONFileLoader(str(Path))
+            else:
+                # treat as a URL string
+                loc = get_json_loader(loc)
+
+        self._map[uri] = loc
         self._schemes.add(urlparse(uri).scheme)
 
     def add_locations(self, urifiles):
         """
-        add all the URI-file mappings in the given dictionary
+        add all the URI-location mappings in the given dictionary
         """
-
-        # strip any trailing #s from the ids
-        urilocs = {}
-        for id in urifiles:
-            outid = id
-            if id.endswith('#'):
-                outid = id.rstrip('#')
-            urilocs[outid] = urifiles[id]
-        
-        self._map.update(urilocs)
-        self._addschemes(urilocs)
+        for uri in urifiles:
+            self.add_location(uri, urifiles[uri])
 
     def copy_locations_from(self, loader):
         """
@@ -191,30 +485,7 @@ class SchemaLoader(BaseSchemaLoad):
                        registered location.  This includes if the file is
                        not found or reading causes a syntax error.  
         """
-        loc = self.locate(uri)
-        url = urlparse(loc)
-
-        # Note: this part adapted from jsonschema.RefResolver.resolve_remote()
-        # (v2.5.1)
-        if not url.scheme:
-            with open(loc) as fd:
-                return json.load(fd)
-        elif (
-            scheme in [u"http", u"https"] and
-            requests and
-            getattr(requests.Response, "json", None) is not None
-        ):
-            # Requests has support for detecting the correct encoding of
-            # json over http
-            if callable(requests.Response.json):
-                result = requests.get(loc).json()
-            else:
-                result = requests.get(loc).json
-        else: 
-            # Otherwise, pass off to urllib and assume utf-8
-            result = json.loads(urlopen(uri).read().decode("utf-8"))
-
-        return result
+        return self._map[uri]()
 
     def load_locations(self, filename, basedir=None):
         """
@@ -254,17 +525,111 @@ class SchemaHandler(Mapping):
     def __iter__(self):
         return self._loader._schemes.__iter__()
 
+class SchemaCache(metaclass=abc.ABCMeta):
+    """
+    an interface for discovering schemas in a local or remote location.  This is 
+    intended for loading schemas into a SchemaLoader instance (via its 
+    :py:meth:`discover` method).  
+    """
+
+    def __init__(self, logger: Logger=None):
+        self.logger = logger
+
+    @abc.abstractmethod
+    def discover(self, deep=True) -> Iterator[Tuple[str, JSONDataLoader]]:
+        """
+        return an iterator to discovered schemas in the cache, returning them as a 2-tuple, 
+        (id, JSONDataLoader).
+        :param bool deep:  if True (default), do an exhaustive search.  What this means may 
+                           depend on the implementation.  It can mean, for example, to descend 
+                           into subdirectories.  
+        """
+        raise NotImplementedError()
+
+class PackageResourceSchemaCache(SchemaCache):
+    """
+    A SchemaCache that finds all the schema documents available as resources 
+    of a python package.
+    """
+
+    def __init__(self, pkg: Union[ModuleType, str], resdir: str=None,
+                 glob: str='*', logger: Logger=None):
+        """
+        setup the cache
+        :param module|str pkg:  the python package containing the schemas, given either 
+                                as a module instance or as a dot-delimited string.
+        :param str     resdir:  the resource directory relative to the package to look
+                                for schemas under
+        :param str       glob:  a file glob pattern (e.g. "*.json") to restrict the 
+                                search to files with names matching it
+        :raises ImportError:  if `pkg` is a string but cannot be imported as a module.
+        :raises FileNotFoundError:  if the file does not exist as a resource in the 
+                                    specified package
+        """
+        super(PackageResourceSchemaCache, self).__init__(logger)
+        self._pkg = pkg
+        if not glob:
+            glob = '*'
+        self._glob = glob
+        self._root = importlib_resource.files(pkg)
+        if resdir:
+            self._root = self._src.joinpath(resdir)
+        
+    def discover(self, deep=True)  -> Iterator[Tuple[str, JSONDataLoader]]:
+        """
+        recursively discover all the schema files found as resources in the configured package
+        :param bool deep:  if True (default), do a recursive search, descending into 
+                           subdirectories.  
+        """
+        for fpath, id, schema in self._iterschemas(deep):
+            yield id, JSONResourceLoader(self._pkg, fpath)
+
+    def schemas(self):
+        """
+        return a dictionary of mappings of URIs to parsed schemas
+        """
+        out = {}
+        for fpath, id, schema in self._iterfiles():
+            out[id] = schema
+        return out
+
+    def _iterschemas(self, recursive=True) -> Iterator[Tuple[Path, str, Mapping]]:
+        globfiles = self._root.rglob if recursive else self._root.glob
+        for fpath in globfiles(self._glob):
+            if fpath.is_file():
+                outpath = fpath.relative_to(self._root)
+                try:
+                    schema = json.loads(fpath.read_text("utf-8"))
+                    if not isinstance(schema, Mapping):
+                        if self.loggger:
+                            self.logger.debug(f"{str(outpath)}: Not a schema: does not contain a JSON object")
+                        continue
+                    if '$schema' not in schema:
+                        if self.loggger:
+                            self.logger.debug(f"{str(outpath)}: Not a schema: Missing $schema property")
+                        continue
+                    id = schema.get("$id") or schema.get("id")
+
+                    yield outpath, id, schema
+
+                except JSONDecodeError as ex:
+                    if self.logger:
+                        self.logger.debug("%s: Not a parseable JSON file (%s)", str(outpath), str(ex))
+                except IOError as ex:
+                    if self.logger:
+                        self.logger.debug("%s: IO error while reading: %s", str(outpath), str(ex))
+                    
 
 class DirectorySchemaCache(object):
     """
-    a front end for a cache of schemas stored in files within a single 
-    directory.  This class can either pre-load all schemas into memory or 
-    simply create a mapping of URIs to file locations.  
+    A SchemaCache that finds all the schema documents found under a
+    given directory.  This class can either pre-load all schemas into 
+    memory or simply create a mapping of URIs to file locations.  
 
     A schema is recognized as a JSON file containing a "$schema" property set 
-    to a recognized JSON-Schema URI.  It should also contain an "id" property 
-    that contains the schema's URI; if it doesn't, a file-scheme URI will be 
-    given to it based on its location on disk.  
+    to a recognized JSON-Schema URI.  It should also contain an "$id" (or "id")
+    property that contains the schema's URI; if it doesn't, a file-scheme URI 
+    will be given to it based on its location on disk.  
     """
 
     class NotASchemaError(Exception):
@@ -385,6 +750,15 @@ class DirectorySchemaCache(object):
                     continue
             if not recurse:
                 break
+
+    def discover(self, deep=True)  -> Iterator[Tuple[str, JSONDataLoader]]:
+        """
+        recursively discover all the schema files found recursively within a directory
+        :param bool deep:  if True (default), do a recursive search, descending into 
+                           subdirectories.  
+        """
+        for fpath, id, schema in self._iterfiles(deep):
+            yield id, JSONFileLoader(fpath, self._dir)
 
     def locations(self, absolute=True, recursive=True):
         """

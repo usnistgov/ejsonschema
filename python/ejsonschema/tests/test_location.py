@@ -56,18 +56,18 @@ class TestLocationReader(object):
     def test_ctor(self):
         rdr = location.LocationReader()
         assert rdr
-        assert not rdr.basedir
+        assert not rdr.baseurl
         assert rdr.deffmt == 'txt'
         assert rdr.parsers 
         assert 'json' in rdr.parsers and 'txt' in rdr.parsers
 
         rdr = location.LocationReader('/usr/local/etc')
         assert rdr
-        assert rdr.basedir == '/usr/local/etc'
+        assert rdr.baseurl == '/usr/local/etc'
         assert rdr.deffmt == 'txt'
         rdr = location.LocationReader(basedir='/usr/local/etc')
         assert rdr
-        assert rdr.basedir == '/usr/local/etc'
+        assert rdr.baseurl == '/usr/local/etc'
         assert rdr.deffmt == 'txt'
 
         parsers = dict(rdr.parsers)
@@ -75,14 +75,14 @@ class TestLocationReader(object):
 
         rdr = location.LocationReader(None, parsers)
         assert rdr
-        assert not rdr.basedir
+        assert not rdr.baseurl
         assert rdr.parsers 
         assert 'json' in rdr.parsers and 'txt' in rdr.parsers \
            and 'text' in rdr.parsers 
         assert ('txt' in rdr.parsers) is ('text' in rdr.parsers)
         rdr = location.LocationReader(parsers=parsers)
         assert rdr
-        assert not rdr.basedir
+        assert not rdr.baseurl
         assert rdr.parsers 
         assert 'json' in rdr.parsers and 'txt' in rdr.parsers \
            and 'text' in rdr.parsers 
@@ -96,7 +96,7 @@ class TestLocationReader(object):
         assert data
         assert len(data) == 2
         assert data.get("uri:nist.gov/goober") == "http://www.ivoa.net/xml/goober"
-        assert data.get("http://mgi.nist.gov/goof") == "goof.xml"
+        assert os.path.basename(data.get("http://mgi.nist.gov/goof")) == "goof.xml"
 
         data = rdr.read(jsonfile, fmt='json', basedir="/etc")
         assert data
@@ -119,7 +119,7 @@ class TestLocationReader(object):
         assert data
         assert len(data) == 2
         assert data.get("uri:nist.gov/goober") == "http://www.ivoa.net/xml/goober"
-        assert data.get("http://mgi.nist.gov/goof") == "goof.xml"
+        assert os.path.basename(data.get("http://mgi.nist.gov/goof")) == "goof.xml"
 
         data = rdr.read(jsonfile, fmt='json', basedir="/etc")
         assert data

@@ -4,7 +4,7 @@ This includes the ability to make use of copies of the schema documents on
 local disk.
 """
 from __future__ import with_statement
-import sys, os, json
+import sys, os, json, warnings
 from urllib.parse import urlparse
 
 def parse_mappings_asjson(fd):
@@ -69,22 +69,27 @@ class LocationReader(object):
     a class that will read locations for documents from files.  
     """
 
-    def __init__(self, basedir=None, parsers=_parsers):
+    def __init__(self, baseurl=None, parsers=_parsers, basedir=None):
         """
         initialize the reader
 
-        :argument str basedir:  the base directory that document paths are 
+        :argument str baseurl:  a base URI (or file directory) that document 
+                                locations, if given in relative form, are 
                                 assumed to be relative to.  If not given, any
                                 relative paths will be assumed to be relative
                                 to the directory containing the location file. 
         :argument parsers:  a dictionary of parser functions that should be 
                             invoked based on the file extension.  
         """
+        if basedir:
+            warnings.warn(("LocationReader: use of the basedir argument is deprecated "
+                           "and will be removed in a future version. Use baseurl instead."),
+                          DeprecationWarning, stacklevel=2)
         self.parsers = parsers
-        self.basedir = basedir
+        self.baseurl = baseurl or basedir
         self.deffmt = 'txt'
 
-    def read(self, locfile, fmt=None, basedir=None):
+    def read(self, locfile, fmt=None, baseurl=None, basedir=None):
         """
         read a given location file and load the URI-location mappings into
         the given dictionary.
@@ -95,17 +100,30 @@ class LocationReader(object):
         :argument str fmt:      the format of the file to assume as identified
                                 by a registered filename extension (e.g. "json",
                                 "txt").  
-        :argument str basedir:  the basedir to assume for relative file path
+        :argument str baseuri:  the base URL to assume for relative file path
                                 locations found in the file; this overrides the
-                                basedir set at construction time.  
+                                `baseurl` set at construction time.  
 
         :exc `ValueError` if the file contents does not comply with the 
                           expected format.
         """
-        if basedir is None:
-            basedir = self.basedir
-        if basedir is None:
-            basedir = os.path.abspath(os.path.dirname(locfile))
+        if basedir:
+            warnings.warn(("LocationReader: use of the basedir argument is deprecated "
+                           "and will be removed in a future version. Use baseurl instead."),
+                          DeprecationWarning, stacklevel=2)
+        if baseurl is None:
+            baseurl = basedir
+        if baseurl is None:
+            baseurl = self.baseurl
+        if baseurl is None:
+            baseurl = os.path.abspath(os.path.dirname(locfile))
+
+        # file URLs can use the OS-native path separator; others should always use forward slash
+        basesep = os.sep
+        sch = urlparse(baseurl).scheme
+        if sch and sch != "file":
+            basesep = '/'
+        baseurl = baseurl.rstrip(basesep)
 
         if not fmt:
             fmt = os.path.splitext(locfile)[1][1:]
@@ -125,15 +143,16 @@ class LocationReader(object):
         with open(locfile) as fd:
             out =u2l(fd)
 
-        # turn simple file URIs into paths; turn relative paths into 
-        # absolute ones
+        # turn relative locations into absolute urls or paths
         for uri, loc in out.items():
-            locurl = urlparse(loc, scheme='file')
-            if locurl.scheme == 'file' and not locurl.netloc:
-                loc = locurl.path
-                if basedir:
-                    loc = os.path.abspath(os.path.join(basedir, loc))
-                out[uri] = loc
+            locurl = urlparse(loc)
+            if not locurl.scheme or (locurl.scheme == 'file' and not locurl.netloc):
+                if baseurl and not locurl.path.startswith(basesep):
+                    loc = basesep.join([baseurl, locurl.path])
+                    locurl = urlparse(loc)
+            if not locurl.scheme or (locurl.scheme == 'file' and not locurl.netloc):
+                loc = os.path.abspath(locurl.path)
+            out[uri] = loc
 
         return out
 
