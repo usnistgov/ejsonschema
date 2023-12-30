@@ -7,12 +7,12 @@ from io import StringIO
 from . import Tempfiles
 import ejsonschema.validate as val
 import ejsonschema.schemaloader as loader
-from ejsonschema.instance import DEF_EXTSCHEMAS
+from ejsonschema.instance import DRAFT04_EXTSCHEMAS
 
 from .config import schema_dir as schemadir, data_dir as datadir, \
                     examples_dir as exdir
 enh_json_schema = os.path.join(schemadir, "enhanced-json-schema-v0.1.json")
-ipr_ex = os.path.join(exdir, "ipr.json")
+ipr_ex = os.path.join(exdir, "ipr-draft4.json")
 
 @pytest.fixture(scope="module")
 def validator(request):
@@ -101,7 +101,7 @@ class TestExtValidator(object):
         # these should not
         with open(probfile) as fd:
             inst = json.load(fd)
-        errs = validator.validate_against(inst, inst[DEF_EXTSCHEMAS][0], True)
+        errs = validator.validate_against(inst, inst[DRAFT04_EXTSCHEMAS][0], True)
         assert len(list(filter(lambda e: isinstance(e, val.ValidationError),errs))) > 0
 
         with pytest.raises(val.ValidationError):

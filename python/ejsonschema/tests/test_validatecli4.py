@@ -7,7 +7,7 @@ import ejsonschema.cli.validate as cli
 from .config import schema_dir as schemadir, data_dir as datadir, examples_dir as exdir
 
 enh_json_schema = os.path.join(schemadir, "enhanced-json-schema-v0.1.json")
-ipr_ex = os.path.join(exdir, "ipr.json")
+ipr_ex = os.path.join(exdir, "ipr-draft4.json")
 
 class TstSys(object):
     def __init__(self):
