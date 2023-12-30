@@ -7,16 +7,16 @@ from io import StringIO
 from . import Tempfiles
 import ejsonschema.validate as val
 import ejsonschema.schemaloader as loader
-from ejsonschema.instance import DRAFT04_EXTSCHEMAS
+from ejsonschema.instance import DEF_EXTSCHEMAS
 
 from .config import schema_dir as schemadir, data_dir as datadir, \
                     examples_dir as exdir
-enh_json_schema = os.path.join(schemadir, "enhanced-json-schema-v0.1.json")
-ipr_ex = os.path.join(exdir, "ipr-draft4.json")
+enh_json_schema = os.path.join(schemadir, "json-extension-schemas-2020-12-schema.json")
+ipr_ex = os.path.join(exdir, "ipr-2020-12.json")
 
 @pytest.fixture(scope="module")
 def validator(request):
-    return val.ExtValidator.with_schema_dir(exdir, ejsprefix='$')
+    return val.ExtValidator.with_schema_dir(exdir)
 
 def test_ipr(validator):
     # borrowed from test_examples.py, this test exercises most of the features
@@ -36,7 +36,7 @@ def test_extschema():
     #   * resolving $refs via schemas on disk
     #   * extension schema validation
     #   * initiating validation on a filename
-    # 
+    #
     validator = val.ExtValidator.with_schema_dir(schemadir)
     validator.validate_file(enh_json_schema, False, True)
 
@@ -66,14 +66,14 @@ class TestExtValidator(object):
         with open(enh_json_schema) as fd:
             enh = json.load(fd)
 
-        validator = val.ExtValidator(ejsprefix='$')
-        validator._schemaStore[enh['id']] = enh
+        validator = val.ExtValidator()
+        validator._schemaStore[enh['$id']] = enh
 
         with pytest.raises(val.RefResolutionError):
             validator.validate_file(enh_json_schema, False, True)
 
     def test_strict(self, validator):
-        probfile = os.path.join(datadir, "unresolvableref4.json")
+        probfile = os.path.join(datadir, "unresolvableref.json")
 
         # this should work
         validator.validate_file(probfile, False, False)
@@ -92,8 +92,8 @@ class TestExtValidator(object):
 
 
     def test_invalidextension(self):
-        validator = val.ExtValidator.with_schema_dir(schemadir, ejsprefix='$')
-        probfile = os.path.join(datadir, "invalidextension4.json")
+        validator = val.ExtValidator.with_schema_dir(schemadir)
+        probfile = os.path.join(datadir, "invalidextension.json")
 
         # this should work
         validator.validate_file(probfile, True, True)
@@ -101,7 +101,7 @@ class TestExtValidator(object):
         # these should not
         with open(probfile) as fd:
             inst = json.load(fd)
-        errs = validator.validate_against(inst, inst[DRAFT04_EXTSCHEMAS][0], True)
+        errs = validator.validate_against(inst, inst[DEF_EXTSCHEMAS][0], True)
         assert len(list(filter(lambda e: isinstance(e, val.ValidationError),errs))) > 0
 
         with pytest.raises(val.ValidationError):
@@ -137,8 +137,8 @@ class TestExtValidator(object):
         assert len(errs) == 0
 
 def test_exc2json():
-    validator = val.ExtValidator.with_schema_dir(schemadir, ejsprefix='$')
-    probfile = os.path.join(datadir, "invalidextension4.json")
+    validator = val.ExtValidator.with_schema_dir(schemadir)
+    probfile = os.path.join(datadir, "invalidextension.json")
 
     errs = validator.validate_file(probfile, False, True, False)
     assert len(errs) == 2

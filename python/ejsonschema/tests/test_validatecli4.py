@@ -74,7 +74,7 @@ def test_load_ejs(tstsys):
 
 def test_simple_invalid(tstsys):
 
-    baddoc = os.path.join(datadir, "invalidextension.json")
+    baddoc = os.path.join(datadir, "invalidextension4.json")
     app = cli.Validate("goob", tstsys.stdout, tstsys.stderr)
     tstsys.argv[1:] = "-L {0} --val-prop-prefix $ {1}".format(schemadir, baddoc).split()
     exit = app.execute()
@@ -96,7 +96,7 @@ def test_cant_resolve(tstsys):
 
 def test_ignore_ext(tstsys):
 
-    baddoc = os.path.join(datadir, "invalidextension.json")
+    baddoc = os.path.join(datadir, "invalidextension4.json")
     app = cli.Validate("goob", tstsys.stdout, tstsys.stderr)
     tstsys.argv[1:] = "-L {0} -g --val-prop-prefix $ {1}".format(schemadir, baddoc).split()
     exit = app.execute()

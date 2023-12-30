@@ -196,7 +196,7 @@ def schemafiles(request):
 
     # this ringer makes sure the schema finder can distinguish schema files from
     # arbitrary JSON data files
-    shutil.copy(os.path.join(exdir,"ipr.json"), schdir)
+    shutil.copy(os.path.join(exdir,"ipr-2020-12.json"), schdir)
 
     def fin():
         tf.clean()
