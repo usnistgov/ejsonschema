@@ -29,7 +29,7 @@ a means for JSON instance documents to claim compliance simultaneously
 to a primary schema and any number of extension schemas.  The primary
 schema is declare by providing its URI in "$schema" property (borrowed
 from JSON Schema); the extended schema URIs can then be listed in any
-array property called "$extensionSchemas".
+array property called "@extensionSchemas".
 
 (The Enhanced JSON Schema framework also defines a number of useful
 documentation properties that can be included in the JSON Schema
@@ -55,10 +55,11 @@ in the schemas (similar to what "xsi:type" provides in XML).
 
 The ejsonschema library has the following dependencies:
 
-   * python > 3.8.x  (python 2.7.x is being deprecated)
-   * jsonschema 2.5.x or later
-   * json-spec 0.9.16 or later
+   * python 3.8 or later
+   * jsonschema 4.0.x or later (> 4.5.1 recommended)
+   * json-spec 0.9.16 or later (> 0.11.0 recommended)
    * requests
+   * importlib_resources (if using python < 3.9)
 
 In addition, the testing framework uses py.test. 
 
