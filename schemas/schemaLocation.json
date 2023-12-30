@@ -1,6 +1,6 @@
 {
     "https://data.nist.gov/od/dm/json-extension-schemas/v0.2":
-        "https://data.nist.gov/od/dm/json-extension-schemas/v0.2",
+        "json-extension-schemas-2020-12-schema.json",
     "https://data.nist.gov/od/dm/json-extension-schemas/v0.2/draft04":
         "json-extension-schemas-draft04-schema.json",
     "https://data.nist.gov/od/dm/enhanced-doc-schema/v0.2": "enhanced-doc-schema.json",
