@@ -56,8 +56,8 @@ in the schemas (similar to what "xsi:type" provides in XML).
 The ejsonschema library has the following dependencies:
 
    * python 3.8 or later
-   * jsonschema 4.0.x or later (> 4.5.1 recommended)
-   * json-spec 0.9.16 or later (> 0.11.0 recommended)
+   * jsonschema 4.0.x or later, < 4.18.0 (> 4.5.1 recommended)
+   * json-spec 0.9.16 or later (>= 0.11.0 recommended)
    * requests
    * importlib_resources (if using python < 3.9)
 
