@@ -1,7 +1,7 @@
 {
     "id": "urn:nist.gov/nmrr/ipr",
     "@schema": "http://mgi.nist.gov/json/registry-resource/v0.1",
-    "@ns": { "ms": "urn:nist.gov/schema/mat-sci_res-md/1.0wd#/definitions/" },
+    "@ns": { "ms": "urn:nist.gov/schema/mat-sci_res-md/1.0wd#/$defs/" },
     "@extensionSchemas": [ "ms:Database" ],
     "identity": {
         "title": "The Interatomic Potentials Repository Project",
