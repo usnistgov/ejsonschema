@@ -11,6 +11,7 @@
         "https://json-schema.org/draft/2020-12/vocab/format-annotation": true,
         "https://json-schema.org/draft/2020-12/vocab/content": true
     },
+    "$dynamicAnchor": "meta",
 
     "title": "A vocabulary for enhanced documentation of JSON schemas",
     "description": "This JSON Schema vocabulary provides additional markup for documenting a JSON Schema document in a machine-readable way.  It builds on the definitions in the standard meta-data vocabulary and the core property, $comment",
@@ -83,7 +84,6 @@
 
         "EnhancedSchema": {
             "description": "JSON schema description with enhancements for documentation",
-            "$dynamicAnchor": "meta",
             "allOf": [
                 { "$ref": "https://json-schema.org/draft/2020-12/schema" },
                 { "$ref": "#/$defs/StringPropertyDocumentation" }
