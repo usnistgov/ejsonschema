@@ -4,6 +4,7 @@ cached on local disk.
 """
 import sys, os, json, errno, warnings, abc
 from collections.abc import Mapping
+from types import ModuleType
 from urllib.parse import urlparse
 from urllib.request import urlopen
 from pathlib import Path
@@ -121,7 +122,7 @@ class JSONResourceLoader(JSONDataLoader):
         :raises ImportError:  if `pkg` is a string but cannot be imported as a module.
         :raises FileNotFoundError:  if the file does not exist as a resource in the specified package
         """
-        src = importlib_resource.files(pkg)
+        src = resources.files(pkg)
         if resdir:
             src = self._src.joinpath(resdir)
         src = src.joinpath(respath)
@@ -371,7 +372,7 @@ class SchemaLoader(BaseSchemaLoad):
         JSON schemas will be loaded.  
         :param module|str pkg:  the python package containing the schemas, given either 
                                 as a module instance or as a dot-delimited string.
-        :param str     resdir:  the resource directory relative to the package to look
+        :param str    respath:  the resource directory relative to the package to look
                                 for schemas under
         :param str       glob:  a file glob pattern (e.g. "*.json") to restrict the 
                                 search to files with names matching it
@@ -385,16 +386,18 @@ class SchemaLoader(BaseSchemaLoad):
         """
 
         # this ensures that the python package and directory exists:
-        cache = PackageResourceSchemaCache(pkg, resdir, glob, logger.getChild("prsc"))
+        cache = PackageResourceSchemaCache(pkg, respath, glob, logger.getChild("prsc"))
+
+        out = SchemaLoader()
 
         locpath = None
         if locfile:
             locpath = cache.filepath(locfile)
         if locpath and locpath.is_file():
-            dirroot = "resource:" + (pkg.__name__ if isinstance(pkg, Module) else pkg)
-            if resdir:
-                dirroot = "/".join([dirroot, resdir])
-            with importlib_resources.as_file(locpath) as schlocf:
+            dirroot = "resource:" + (pkg.__name__ if isinstance(pkg, ModuleType) else pkg)
+            if respath:
+                dirroot = "/".join([dirroot, respath])
+            with resources.as_file(locpath) as schlocf:
                 out.load_locations(schlocf, dirroot)
 
         else:
@@ -523,13 +526,13 @@ class PackageResourceSchemaCache(SchemaCache):
     of a python package.
     """
 
-    def __init__(self, pkg: Union[ModuleType, str], resdir: str=None,
+    def __init__(self, pkg: Union[ModuleType, str], respath: str=None,
                  glob: str='*', logger: Logger=None):
         """
         setup the cache
         :param module|str pkg:  the python package containing the schemas, given either 
                                 as a module instance or as a dot-delimited string.
-        :param str     resdir:  the resource directory relative to the package to look
+        :param str    respath:  the resource path relative to the package to look
                                 for schemas under
         :param str       glob:  a file glob pattern (e.g. "*.json") to restrict the 
                                 search to files with names matching it
@@ -542,9 +545,9 @@ class PackageResourceSchemaCache(SchemaCache):
         if not glob:
             glob = '*'
         self._glob = glob
-        self._root = importlib_resource.files(pkg)
-        if resdir:
-            self._root = self._src.joinpath(resdir)
+        self._root = resources.files(pkg)
+        if respath:
+            self._root = self._src.joinpath(respath)
         
     def discover(self, deep=True)  -> Iterator[Tuple[str, JSONDataLoader]]:
         """
@@ -583,7 +586,7 @@ class PackageResourceSchemaCache(SchemaCache):
 
                     yield outpath, id, schema
 
-                except JSONDecodeError as ex:
+                except json.JSONDecodeError as ex:
                     if self.logger:
                         self.logger.debug("%s: Not a parseable JSON file (%s)", str(outpath), str(ex))
                 except IOError as ex:
