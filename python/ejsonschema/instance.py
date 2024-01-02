@@ -8,6 +8,12 @@ import os, json, jsonspec.pointer
 from urllib.parse import urlparse
 from urllib.request import urlopen
 
+requests = None
+try:
+    import requests
+except ImportError as ex:
+    pass  # will use urlopen instead
+
 EXTSCHEMAS = "extensionSchemas"
 DEF_EXTSCHEMAS = "@"+EXTSCHEMAS
 DRAFT04_EXTSCHEMAS = "$"+EXTSCHEMAS
@@ -73,7 +79,7 @@ class Instance(object):
             with open(loc) as fd:
                 data = json.load(fd)
         elif (
-            scheme in [u"http", u"https"] and
+            url.scheme in [u"http", u"https"] and
             requests and
             getattr(requests.Response, "json", None) is not None
         ):
@@ -85,7 +91,7 @@ class Instance(object):
                 data = requests.get(loc).json
         else: 
             # Otherwise, pass off to urllib and assume utf-8
-            data = json.loads(urlopen(uri).read().decode("utf-8"))
+            data = json.loads(urlopen(loc).read().decode("utf-8"))
 
         return Instance(data, loc, extschemastag=extschemastag)
 
