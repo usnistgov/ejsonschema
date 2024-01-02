@@ -2,7 +2,6 @@
 a module that provides support for validating schemas that support 
 extended json-schema tags.
 """
-from __future__ import with_statement
 import sys, os, json
 from collections.abc import Mapping
 import urllib.parse as urlparse
@@ -10,8 +9,11 @@ from builtins import str as unicode
 
 import jsonschema
 import jsonschema.validators as jsch
-from jsonschema.exceptions import (ValidationError, SchemaError, 
-                                   RefResolutionError)
+from jsonschema.exceptions import (ValidationError, SchemaError)
+import referencing as refng
+import referencing.exceptions as refngexc
+from referencing.exceptions import Unresolvable
+from referencing.jsonschema import DRAFT202012
 
 from . import schemaloader as loader
 from .instance import Instance, EXTSCHEMAS
@@ -60,8 +62,7 @@ class ExtValidator(object):
         if not schemaLoader:
             schemaLoader = loader.SchemaLoader()
         self._loader = schemaLoader
-        self._handler = loader.SchemaHandler(schemaLoader)
-        self._schemaStore = {}
+        self._schemaRegistry = refng.Registry(retrieve=self._loader)
         self._validators = {}
         if ejsprefix is None:
             ejsprefix = '@'
@@ -91,7 +92,7 @@ class ExtValidator(object):
         return ExtValidator(loader.SchemaLoader.from_directory(dirpath, logger=ldrlogger),
                             ejsprefix=ejsprefix, logger=logger)
 
-    def load_schema(self, schema, uri=None):
+    def load_schema(self, schema, uri=None, defspec=DRAFT202012):
         """
         load a pre-parsed schema into the validator.  The schema will be checked 
         for errors first and raise an exception if there is a problem.  If schema
@@ -101,6 +102,8 @@ class ExtValidator(object):
         :argument str  uri:     The URI to associated with the schema.  If not 
                                  provided, the value of the "id" property will
                                  be used.  
+        :argument defspec:      the default specification to assume if the $schema 
+                                 property in the given schema is not set. 
         """
         if not uri:
             uri = schema.get('$id')
@@ -114,7 +117,8 @@ class ExtValidator(object):
         vcls.check_schema(schema)
 
         # now add it
-        self._schemaStore[uri] = schema
+        self._schemaRegistry = \
+            self._schemaRegistry.with_resource(uri, refng.Resource.from_contents(schema, defspec))
         
         
     def validate(self, instance, minimally=False, strict=False, schemauri=None,
@@ -208,31 +212,30 @@ class ExtValidator(object):
             val = self._validators.get(uri)
             if not val:
                 (urib,frag) = self._spliturifrag(uri)
-                schema = self._schemaStore.get(urib)
-                if not schema:
-                    try:
-                        schema = self._loader(urib)
-                    except KeyError as e:
-                        ex = MissingSchemaDocument(
-                                "Unable to find schema document for " + urib)
-                        if strict:
-                            out.append(ex)
-                        continue
+                try:
+                    schema = self._schemaRegistry.get_or_retrieve(urib)
+                except (refngexc.Unretrievable,
+                        refngexc.CannotDetermineSpecification,
+                        refngexc.NoSuchResource) as e:
+                    ex = MissingSchemaDocument(ref=urib)
+                    ex.__cause__ = e
+                    if strict:
+                        out.append(ex)
+                    continue
+                schema = schema.value.contents
                     
-                resolver = jsch.RefResolver(uri, schema, self._schemaStore,
-                                            handlers=self._handler)
+                cls = jsch.validator_for(schema)
 
                 if frag:
                     try:
-                        schema = resolver.resolve_fragment(schema, frag)
-                    except RefResolutionError as ex:
-                        exc = RefResolutionError(
-                         "Unable to resolve fragment, {0} from schema, {1} ({2})"
-                         .format(frag, urib, str(ex)))
+                        schema = self._schemaRegistry.get_or_retrieve(uri)
+                    except (refngexc.Unretrievable,
+                            refngexc.CannotDetermineSpecification,
+                            refngexc.Unretrievable) as e:
+                        exc = refngexc.Unresolvable(ref=uri)
                         out.append(exc)
                         continue
-
-                cls = jsch.validator_for(schema)
+                    schema = schema.value.contents
 
                 # check the schema for errors
                 scherrs = [ SchemaError.create_from(err) \
@@ -241,13 +244,12 @@ class ExtValidator(object):
                     out.extend(scherrs)
                     continue
                 
-                val = cls(schema, resolver=resolver)
+                val = cls(schema, registry=self._schemaRegistry)
 
 
             out.extend( [err for err in val.iter_errors(instance)] )
 
             self._validators[uri] = val
-            self._schemaStore.update(val.resolver.store)
 
         return out
 
@@ -289,12 +291,15 @@ def SchemaValidator(_ejsprefix=None):
     """
     return ExtValidator(loader.schemaLoader_for_schemas(), ejsprefix=_ejsprefix)
 
-class MissingSchemaDocument(RefResolutionError):
+class MissingSchemaDocument(refngexc.Unresolvable):
     """
     An error indicating that a needed schema document cannot be loaded.
     """
-    pass
-
+    def __str__(self):
+        out = f"Unable to find schema document for {self.ref}"
+        if self.__cause__:
+            out += f" ({str(self.__cause__)})"
+        return out
 
 from jsonschema._utils import format_as_index as format_path
 
@@ -305,7 +310,7 @@ def exc_to_json(ex):
     out = {}
     try:
         raise ex
-    except (ValidationError, SchemaError, RefResolutionError) as e:
+    except (ValidationError, SchemaError) as e:
         out.update({
             'message':     e.message,
             'validator':   e.validator,
@@ -322,8 +327,15 @@ def exc_to_json(ex):
             out['path'] = e.path and format_path("instance", e.path),
         except SchemaError as exc:
             out['type'] = 'schema'
-        except RefResolutionError as exc:
-            out['type'] = 'resolve'
+    except (refngexc.NoSuchResource, refngexc.Unretrievable, refngexc.CannotDetermineSpecification) as x:
+        out.update({
+            'type':        'resolve',
+            'message':     str(e),
+            'validator':   None,
+            'path':        None,
+            'schema':      None,
+            'schema_path': None
+        })
     except ValueError as e:
         out.update({
             'type':        'json',

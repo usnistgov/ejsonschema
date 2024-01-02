@@ -12,6 +12,8 @@ from types import ModuleType
 from logging import Logger
 
 import jsonschema as jsch
+import referencing as refng
+from referencing.jsonschema import DRAFT202012
 
 from .location import read_loc_file
 
@@ -276,12 +278,22 @@ class BaseSchemaLoad(object, metaclass=abc.ABCMeta):
         """
         raise NotImplementedError()
 
+    def load_schema_for_registry(self, uri, defspec=DRAFT202012):
+        """
+        return the parsed json schema document for a given URI, wrapped as
+        a ``referencing.Resource`` object.  This is form of the schema is 
+        intended for use with ``referencing.Registry``, used by the base
+        ``jsonschema`` module to resolver schema references.  It calls 
+        :py:meth:`load_schema` internally.
+        """
+        return refng.Resource.from_contents(self.load_schema(uri), defspec)
+
     def __call__(self, uri):
         """
         return the parsed json schema document for a given URI.  Calling an
         instance as a function is equivalent to calling load_schema().
         """
-        return self.load_schema(uri)
+        return self.load_schema_for_registry(uri)
 
 class SchemaLoader(BaseSchemaLoad):
     """
@@ -289,9 +301,6 @@ class SchemaLoader(BaseSchemaLoad):
     For example, it can be used as a schema handler that loads schemas from
     local disk files rather than from remote locations.  It can also provide
     map schema URIs to arbitrary URL locations.  
-
-    This class can be used (indirectly) as a JSON Schema URI handler to a 
-    jsonschema.RefResolver instance; see SchemaHandler.
     """
 
     def __init__(self, urilocs={}):
@@ -302,11 +311,6 @@ class SchemaLoader(BaseSchemaLoad):
                                  that define the schema identified by the URI.
         """
         self._map = dict(urilocs)
-
-        # the following are used to support SchemaHandler; may be removed if 
-        # SchemaHandler is not required for RefResolver
-        self._schemes = set()
-        self._addschemes(urilocs)
 
     @classmethod
     def from_directory(cls, dirpath, ensure_locfile=False, 
@@ -413,11 +417,6 @@ class SchemaLoader(BaseSchemaLoad):
         out.load_locations(locpath, basedir)
         return out
 
-    def _addschemes(self, map):
-        # used to support SchemaHandler
-        for loc in self._map:
-            self._schemes.add(urlparse(loc).scheme)
-
     def locate(self, uri):
         """
         return location of the schema for the given URI.
@@ -457,7 +456,6 @@ class SchemaLoader(BaseSchemaLoad):
                 loc = get_json_loader(loc)
 
         self._map[uri] = loc
-        self._schemes.add(urlparse(uri).scheme)
 
     def add_locations(self, urifiles):
         """
@@ -497,33 +495,6 @@ class SchemaLoader(BaseSchemaLoad):
                                  class.
         """
         self.add_locations(read_loc_file(filename, basedir=basedir))
-
-class SchemaHandler(Mapping):
-    """
-    A wrapper class to use a SchemaLoader as a JSON Schema URI handler to a 
-    jsonschema.RefResolver instance.  
-    """
-
-    def __init__(self, loader, strict=False):
-        """
-        initialize the handler
-
-        :argument dict urilocs:  a dictionary mapping URIs to local file paths
-                                 that define the schema identified by the URI.
-        """
-        self._loader = loader
-        self._strict = strict
-            
-    def __getitem__(self, scheme):
-        if self._strict and scheme not in self._loader._schemes:
-            raise KeyError(scheme)
-        return self._loader
-
-    def __len__(self):
-        return len(self._loader._schemes)
-
-    def __iter__(self):
-        return self._loader._schemes.__iter__()
 
 class SchemaCache(metaclass=abc.ABCMeta):
     """

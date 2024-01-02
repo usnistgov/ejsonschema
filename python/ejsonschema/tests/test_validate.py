@@ -59,17 +59,17 @@ class TestExtValidator(object):
     def test_usesloader(self):
         # ...by testing lack of loader
         validator = val.ExtValidator()
-        with pytest.raises(val.RefResolutionError):
+        with pytest.raises(val.Unresolvable):
             validator.validate_file(enh_json_schema, False, True)
 
-        # This specifically tests the use of RefResolver
+        # This specifically tests the use of ref Registry
         with open(enh_json_schema) as fd:
             enh = json.load(fd)
 
         validator = val.ExtValidator()
-        validator._schemaStore[enh['$id']] = enh
+        validator.load_schema(enh, enh['$id'])
 
-        with pytest.raises(val.RefResolutionError):
+        with pytest.raises(val.Unresolvable):
             validator.validate_file(enh_json_schema, False, True)
 
     def test_strict(self, validator):
@@ -82,12 +82,12 @@ class TestExtValidator(object):
         with open(probfile) as fd:
             inst = json.load(fd)
         errs = validator.validate_against(inst, "urn:unresolvable.json", True)
-        assert len(list(filter(lambda e: isinstance(e, val.RefResolutionError),errs))) > 0
+        assert len(list(filter(lambda e: isinstance(e, val.Unresolvable),errs))) > 0
 
-        with pytest.raises(val.RefResolutionError):
+        with pytest.raises(val.Unresolvable):
             validator.validate(inst, False, True)
 
-        with pytest.raises(val.RefResolutionError):
+        with pytest.raises(val.Unresolvable):
             validator.validate_file(probfile, False, True)
 
 
@@ -121,8 +121,8 @@ class TestExtValidator(object):
         inst = { "name": "Bob" }
         uri = "urn:goob"
 
-        assert uri not in validator._schemaStore
-        assert schema['id'] not in validator._schemaStore
+        assert uri not in validator._schemaRegistry
+        assert schema['id'] not in validator._schemaRegistry
 
         validator.load_schema(schema, uri)
         validator.validate_against(inst, [uri])

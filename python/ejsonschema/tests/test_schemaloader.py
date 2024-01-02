@@ -5,6 +5,7 @@ from io import StringIO
 
 from . import Tempfiles
 import ejsonschema.schemaloader as loader
+import referencing as refng
 
 locs = {
   "uri:nist.gov/goober": "http://www.ivoa.net/xml/goober",
@@ -69,7 +70,10 @@ class TestSchemaLoader(object):
         ldr = loader.SchemaLoader()
         ldr.add_location("uri:nist.gov/goober", schemafile)
 
-        schema = ldr("uri:nist.gov/goober")
+        res = ldr("uri:nist.gov/goober")
+        assert res
+        assert isinstance(res, refng.Resource)
+        schema = res.contents
         assert schema
         assert "$schema" in schema
         assert "id" in schema
@@ -137,51 +141,6 @@ def test_schemaLoader_for_schemas():
     loc = ldr.locate("http://json-schema.org/draft-04/schema")
     assert os.path.basename(loc) == "json-schema-draft04.json"
     assert os.path.exists(loc)
-
-class TestSchemaHandler(object):
-
-    def test_ctor(self):
-        ldr = loader.SchemaHandler(loader.SchemaLoader())
-        assert not ldr._strict
-
-        ldr = loader.SchemaHandler(loader.SchemaLoader(locs))
-        assert not ldr._strict
-
-        ldr = loader.SchemaHandler(locs, True)
-        assert ldr._strict
-
-        ldr = loader.SchemaHandler(loader.SchemaLoader(locs), strict=False)
-        assert not ldr._strict
-
-    def test_compat(self):
-        ldr = loader.SchemaLoader(locs)
-        ldr.add_location("https://data.nist.gov/od/dm/enhanced-json-schema/v0.1", 
-                         schemafile)
-        hdlr = loader.SchemaHandler(ldr)
-
-        assert "uri" in hdlr
-        assert "http" in hdlr
-        assert "https" in hdlr
-        assert len(hdlr) == 3
-
-        assert hdlr["uri"] is ldr
-        assert hdlr["http"] is ldr
-        assert hdlr["ftp"] is ldr  # not strict
-
-        schema = hdlr["https"]("https://data.nist.gov/od/dm/enhanced-json-schema/v0.1")
-        assert isinstance(schema, dict)
-        assert "$schema" in schema
-        assert "id" in schema
-        assert schema["id"] == "https://data.nist.gov/od/dm/enhanced-json-schema/v0.1"
-
-    def test_strict(self):
-        ldr = loader.SchemaLoader(locs)
-        hdlr = loader.SchemaHandler(ldr, strict=True)
-        assert hdlr["uri"] is ldr
-        assert hdlr["http"] is ldr
-
-        with pytest.raises(KeyError):
-            assert hdlr["https"] is ldr 
 
 @pytest.fixture(scope="module")
 def schemafiles(request):

@@ -5,7 +5,7 @@ import os, sys, errno, json
 from io import StringIO
 from argparse import ArgumentParser
 from ..validate import ExtValidator
-from ..validate import ValidationError, SchemaError, RefResolutionError
+from ..validate import ValidationError, SchemaError, Unresolvable
 from ..validate import MissingSchemaDocument
 from ..schemaloader import SchemaLoader, schemaLoader_for_schemas 
 
@@ -187,7 +187,7 @@ class Validate(Runner):
 
                 if not self.opts.silent:
                     self.tell("{0}: valid!".format(os.path.basename(filename)))
-            except (ValidationError, SchemaError, RefResolutionError) as ex:
+            except (ValidationError, SchemaError, Unresolvable) as ex:
                 f = os.path.basename(filename)
                 self.advise("{0}:".format(f))
                 if isinstance(ex, MissingSchemaDocument):
@@ -200,14 +200,14 @@ class Validate(Runner):
                             mfd.write(sid)
                         self.advise(mfd.getvalue())
                         
-                elif isinstance(ex, RefResolutionError):
+                elif isinstance(ex, Unresolvable):
                     self.advise("Unable to resolve reference in schema: "+
                                 str(ex))
                 else:
                     self.advise(str(ex))
                 self.tell("{0}: not valid.".format(f))
                 anyinvalid = True
-                if isinstance(ex, (SchemaError, RefResolutionError)):
+                if isinstance(ex, (SchemaError, Unresolvable)):
                     badschema = True
 
 
