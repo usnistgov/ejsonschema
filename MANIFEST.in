@@ -1,2 +1,3 @@
 include schemas/*-schema.json
+include schemas/json-schema.org/*.json
 include schemas/schemaLocation.*
