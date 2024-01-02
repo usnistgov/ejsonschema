@@ -4,14 +4,14 @@ extended JSON schemas
 """
 from __future__ import with_statement
 
-import os, json, jsonspec.pointer
+import json, jsonspec.pointer
 from urllib.parse import urlparse
 from urllib.request import urlopen
 
 requests = None
 try:
     import requests
-except ImportError as ex:
+except ImportError:
     pass  # will use urlopen instead
 
 EXTSCHEMAS = "extensionSchemas"

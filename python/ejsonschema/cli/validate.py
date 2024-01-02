@@ -1,13 +1,13 @@
 """
 The implementation for the script that provides the command-line interface (CLI)
 """
-import os, sys, errno, json
+import os, sys, json
 from io import StringIO
 from argparse import ArgumentParser
 from ..validate import ExtValidator
 from ..validate import ValidationError, SchemaError, RefResolutionError
 from ..validate import MissingSchemaDocument
-from ..schemaloader import SchemaLoader, schemaLoader_for_schemas 
+from ..schemaloader import SchemaLoader, schemaLoader_for_schemas
 
 description = \
 """validate one or more JSON documents against their schemas"""
