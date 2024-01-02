@@ -2,7 +2,7 @@
 a module that provides support for loading schemas, particularly those 
 cached on local disk.  
 """
-import sys, os, json, errno, warnings, abc
+import sys, os, json, errno, warnings, abc, logging
 from collections.abc import Mapping
 from types import ModuleType
 from urllib.parse import urlparse
@@ -122,7 +122,7 @@ class JSONResourceLoader(JSONDataLoader):
         """
         src = resources.files(pkg)
         if resdir:
-            src = self._src.joinpath(resdir)
+            src = src.joinpath(resdir)
         src = src.joinpath(respath)
         super(JSONResourceLoader, self).__init__(src)
 
@@ -250,6 +250,16 @@ def get_json_loader(url: str):
 _schema_schemaLoader = None
 def schemaLoader_for_schemas():
     global _schema_schemaLoader
+    if not _schema_schemaLoader:
+        try:
+            import ejsonschema
+            resdir = resources.files(ejsonschema).joinpath("resources", "schemas")
+            if redir.is_dir():
+                _schema_schemaLoader = \
+                    SchemaLoader.from_resource_cache(ejsonschema, Path("resources")/"schemas")
+        except (ImportError, Exception):
+            pass
+
     if not _schema_schemaLoader:
         schemadir = os.path.join(os.path.dirname(__file__),
                                  "resources", "schemas")
@@ -380,6 +390,8 @@ class SchemaLoader(BaseSchemaLoad):
                                 for schemas; ignored if `locfile` is present.
         :raises ImportError:  if `pkg` is a string but cannot be imported as a module.
         """
+        if not logger:
+            logger = logging.getLogger("ejs")
 
         # this ensures that the python package and directory exists:
         cache = PackageResourceSchemaCache(pkg, respath, glob, logger.getChild("prsc"))
@@ -388,7 +400,7 @@ class SchemaLoader(BaseSchemaLoad):
 
         locpath = None
         if locfile:
-            locpath = cache.filepath(locfile)
+            locpath = cache.path_for(locfile)
         if locpath and locpath.is_file():
             dirroot = "resource:" + (pkg.__name__ if isinstance(pkg, ModuleType) else pkg)
             if respath:
@@ -571,12 +583,20 @@ class PackageResourceSchemaCache(SchemaCache):
         """
         super(PackageResourceSchemaCache, self).__init__(logger)
         self._pkg = pkg
+
         if not glob:
             glob = '*'
         self._glob = glob
         self._root = resources.files(pkg)
         if respath:
-            self._root = self._src.joinpath(respath)
+            self._root = self._root.joinpath(respath)
+
+    def path_for(self, resfile):
+        """
+        return a Path-like object that represents the expected location of a given resource 
+        file. 
+        """
+        return self._root.joinpath(resfile.strip(os.sep))
         
     def discover(self, deep=True)  -> Iterator[Tuple[str, JSONDataLoader]]:
         """
