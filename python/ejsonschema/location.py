@@ -62,7 +62,7 @@ def register_location_file_parser(ext, parser):
     :argument func parser:  a function to invoke as a parser for files of 
                         the given extension.  
     """
-    _parsers.set(ext, func)
+    _parsers.set(ext, parser)
 
 class LocationReader(object):
     """
