@@ -1,19 +1,12 @@
+os: linux
+dist: focal
+arch: amd64
 language: python
-
-dist:
-  - jammy
 python:
+  - "2.7"
   - "3.8"
   - "3.9"
   - "3.10"
-
-jobs:
-  include:
-    - dist: bionic
-      python: "2.7"
-
-os:
-    - linux
 
 env:
     global:
