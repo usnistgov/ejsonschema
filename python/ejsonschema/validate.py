@@ -4,7 +4,7 @@ extended json-schema tags.
 """
 from __future__ import with_statement
 import sys, os, json
-from collections import Mapping
+from collections.abc import Mapping
 try:
     # python 3
     import urllib.parse as urlparse

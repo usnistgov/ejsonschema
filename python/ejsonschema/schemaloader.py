@@ -5,7 +5,7 @@ cached on local disk.
 from __future__ import with_statement
 import six
 import sys, os, json, errno
-from collections import Mapping
+from collections.abc import Mapping
 try:
     from urllib.parse import urlparse
     from urllib.request import urlopen
